@@ -1000,7 +1000,7 @@ class ndarray(object):
                [ 8.,  8.]])
 
         """
-        raise NotImplementedError
+        return dot(self, b, out)
 
     def dump(self, file):
         """Dump a pickle of the array to the specified file.
@@ -3346,7 +3346,7 @@ def zeros(shape, dtype=np.float, order='C'):
         a.release_update()
     return a
 
-def asarray(a, dtype=None, order=None):
+def asarray(a, dtype=np.dtype(np.float32), order=None):
     if isinstance(a, (ndarray,flatiter,np.ndarray,np.generic)):
         # we return ga.gain.ndarray instances for obvious reasons, but we
         # also return numpy.ndarray instances because they already exist in
@@ -3400,3 +3400,5 @@ def print_sync(what):
         else:
             comm().send(what, dest=0, tag=11)
         sync()
+
+from misc import dot  # Must be at the end due to cyclic imports

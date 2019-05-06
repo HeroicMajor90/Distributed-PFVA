@@ -1,4 +1,4 @@
 #!/usr/bin/env python
-from global_array import GloabalArray
+from global_array import GlobalArray
 
-A = GloabalArray(8)
+A = GlobalArray(8)

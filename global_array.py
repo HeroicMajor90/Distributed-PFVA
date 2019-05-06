@@ -3,7 +3,7 @@ from mpi4py import MPI
 import numpy as np
 
 
-class GloabalArray(object):
+class GlobalArray(object):
 
     def __init__(self, N, M=None, dtype=None):
         self.comm = MPI.COMM_WORLD

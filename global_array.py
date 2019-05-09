@@ -48,12 +48,14 @@ class GlobalArray(object):
         ga.local[:, :] = 1
         return ga
 
+
     @classmethod
     def eye(cls, total_rows, dtype=None):
         ga = cls.zeros(total_rows, total_rows, dtype)
         for row in range(ga.rows):
             ga.local[row, ga.offset + row] = 1
         return ga.local.ndim
+
 
     @classmethod
     def array(cls, total_array):
@@ -62,6 +64,11 @@ class GlobalArray(object):
         ga = cls(total_array.shape[0], total_array.shape[1], total_array.dtype)
         ga.local[:] = total_array[ga.offset:ga.offset + ga.rows]
         return ga
+
+
+    @classmethod
+    def from_file(cls, filename, **kwargs):
+        return cls.array(np.genfromtxt(filename, **kwargs))
 
 
     def __add__(self, other):

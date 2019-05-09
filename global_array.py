@@ -219,3 +219,11 @@ class GlobalArray(object):
                     c = self.local[local_row, current_column] / reduction_row[current_column]
                     for column in range(current_column, self.M):
                         self.local[local_row, column] -= reduction_row[column] * c
+
+        ############# BACK SUBSTIUTION END ###############
+
+        if self.node_id == 0:
+            print("")
+        self.disp()
+        pass
+

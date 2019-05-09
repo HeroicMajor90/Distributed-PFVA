@@ -44,6 +44,42 @@ class GlobalArray(object):
             (self.rows, total_cols), dtype) if local is None else local
 
 
+    @classmethod
+    def zeros(cls, total_rows, total_cols=None, dtype=None):
+        ga = cls(total_rows, total_cols, dtype)
+        ga.local[:, :] = 0
+        return ga
+
+
+    @classmethod
+    def ones(cls, total_rows, total_cols=None, dtype=None):
+        ga = cls(total_rows, total_cols, dtype)
+        ga.local[:, :] = 1
+        return ga
+
+
+    @classmethod
+    def eye(cls, total_rows, dtype=None):
+        ga = cls.zeros(total_rows, total_rows, dtype)
+        for row in range(ga.rows):
+            ga.local[row, ga.offset + row] = 1
+        return ga.local.ndim
+
+
+    @classmethod
+    def array(cls, total_array):
+        total_array = np.array(total_array)
+        assert total_array.ndim == 2
+        ga = cls(total_array.shape[0], total_array.shape[1], total_array.dtype)
+        ga.local[:] = total_array[ga.offset:ga.offset + ga.rows]
+        return ga
+
+
+    @classmethod
+    def from_file(cls, filename, **kwargs):
+        return cls.array(np.genfromtxt(filename, **kwargs))
+
+
     def __add__(self, other):
         if isinstance(other, GlobalArray):
             return GlobalArray(self.total_rows, self.total_cols, local=self.local + other.local)

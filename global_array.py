@@ -7,15 +7,14 @@ import math
 class GlobalArray(object):
 
 
-    def _get_rows_per_node(self, total_rows):
-        return [total_rows / self.nodes + (node_id < total_rows % self.nodes)
-                for node_id in range(self.nodes)]
+    def _get_rows_per_node(self, total_rows, nodes):
+        return [total_rows / nodes + (node_id < total_rows % nodes)
+                for node_id in range(nodes)]
 
 
-    def _get_offsets_per_node(self, total_rows):
-        return [(total_rows / self.nodes * node_id +
-                 min(node_id, total_rows % self.nodes))
-                for node_id in range(self.nodes)]
+    def _get_offsets_per_node(self, total_rows, nodes):
+        return [total_rows / nodes * node_id + min(node_id, total_rows % nodes)
+                for node_id in range(nodes)]
 
 
     def __init__(self, total_rows, total_cols=None, dtype=None, local=None):
@@ -27,8 +26,10 @@ class GlobalArray(object):
         self.nodes = self.comm.Get_size()
         self.node_id = self.comm.Get_rank()
 
-        self.rows = self._get_rows_per_node(total_rows)[self.node_id]
-        self.offset = self._get_offsets_per_node(total_rows)[self.node_id]
+        self.rows = self._get_rows_per_node(
+            total_rows, self.nodes)[self.node_id]
+        self.offset = self._get_offsets_per_node(
+            total_rows, self.nodes)[self.node_id]
 
         self.local = np.empty(
             (self.rows, total_cols), dtype) if local is None else local

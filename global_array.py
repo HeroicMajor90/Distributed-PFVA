@@ -70,9 +70,19 @@ class GlobalArray(object):
             # Code for slicing
             pass
         elif isinstance(key, int):
-            key_in_local = self.row_offset <= key < self.row_offset + self.rows
-            return GlobalArray(
-                1, self.M, local=self.local[key - self.row_offset, :] if key_in_local else None)
+            max_id = key / (self.N / self.nodes)
+            id_with_local = max_id - (max_id > (key % self.nodes) < (self.N % self.nodes))
+
+            if self.node_id == 0:
+                local = np.empty((1, self.M))
+                self.comm.Recv([local, MPI.DOUBLE], source=id_with_local)
+            else:
+                local = None
+
+            if self.node_id == id_with_local:
+                self.comm.Send(self.local[key - self.row_offset, :], dest=0)
+
+            return GlobalArray(1, self.M, local=local)
 
 
     def disp(self):

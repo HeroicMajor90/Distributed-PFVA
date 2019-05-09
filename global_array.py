@@ -21,41 +21,50 @@ class GlobalArray(object):
         self.local = np.empty(
             (self.rows, M), dtype) if local is None else local
 
+
     def __add__(self, other):
         if isinstance(other, GlobalArray):
             return GlobalArray(self.N, self.M, local=self.local + other.local)
         return GlobalArray(self.N, self.M, local=self.local + other)
 
+
     def __radd__(self, other):
         return self + other
+
 
     def __sub__(self, other):
         if isinstance(other, GlobalArray):
             return GlobalArray(self.N, self.M, local=self.local - other.local)
         return GlobalArray(self.N, self.M, local=self.local - other)
 
+
     def __rsub__(self, other):
         if isinstance(other, GlobalArray):
             return GlobalArray(self.N, self.M, local=other.local - self.local)
         return GlobalArray(self.N, self.M, local=other - self.local)
+
 
     def __mul__(self, other):
         if isinstance(other, GlobalArray):
             return GlobalArray(self.N, self.M, local=self.local * other.local)
         return GlobalArray(self.N, self.M, local=self.local * other)
 
+
     def __rmul__(self, other):
         return self * other
+
 
     def __div__(self, other):
         if isinstance(other, GlobalArray):
             return GlobalArray(self.N, self.M, local=self.local / other.local)
         return GlobalArray(self.N, self.M, local=self.local / other)
 
+
     def __rdiv__(self, other):
         if isinstance(other, GlobalArray):
             return GlobalArray(self.N, self.M, local=other.local / self.local)
         return GlobalArray(self.N, self.M, local=other / self.local)
+
 
     def __getitem__(self, key):
         if isinstance(key, slice):
@@ -66,6 +75,7 @@ class GlobalArray(object):
             return GlobalArray(
                 1, self.M, local=self.local[key - self.row_offset, :] if key_in_local else None)
 
+
     def disp(self):
         for n in range(self.nodes):
             if n == self.node_id:
@@ -73,6 +83,7 @@ class GlobalArray(object):
                     print("nodeid " + str(n) + ": " + "rownum " +
                           str(r + self.row_offset) + ": " + str(self.local[r]))
             self.comm.Barrier()
+
 
     def dot(self, other):
         assert self.M == other.N
@@ -97,6 +108,7 @@ class GlobalArray(object):
 
         return res
 
+
     def _global_to_local(self, y, x):
         for nodeloop in range(self.nodes):
             low_bound = ((self.N / self.nodes * nodeloop) +
@@ -110,6 +122,7 @@ class GlobalArray(object):
                 return node, [loc_y, loc_x]
         raise Exception("y value: " + str(y) +
                         " out of bounds, higher than or eq to" + str(self.N))
+
 
     def rref(self):
         eps = 1.0 / (10 ** 10)
@@ -225,5 +238,3 @@ class GlobalArray(object):
         if self.node_id == 0:
             print("")
         self.disp()
-        pass
-

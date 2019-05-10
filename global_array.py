@@ -190,9 +190,10 @@ class GlobalArray(object):
 
 
     def __eq__(self, other):  # Total-wise
-        eq = np.array([np.allclose(self.local, other.local)])
-        self.comm.Allreduce(eq, eq, op=MPI.LAND)
-        return eq[0]
+        local_eq = np.array([np.allclose(self.local, other.local)])
+        global_eq = np.empty(1, dtype=bool)
+        self.comm.Allreduce(local_eq, global_eq, op=MPI.LAND)
+        return global_eq[0]
 
 
     def __ne__(self, other):  # Total-wise

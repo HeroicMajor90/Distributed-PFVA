@@ -17,7 +17,7 @@ class GlobalArray(object):
                 for node_id in range(nodes)]
 
 
-    def __init__(self, total_rows, total_cols=None, dtype=None, local=None):
+    def __init__(self, total_rows, total_cols=None, local=None):
         total_cols = total_rows if total_cols is None else total_cols
         self.total_rows = total_rows
         self.total_cols = total_cols
@@ -32,26 +32,26 @@ class GlobalArray(object):
             total_rows, self.nodes)[self.node_id]
 
         self.local = np.empty(
-            (self.rows, total_cols), dtype) if local is None else local
+            (self.rows, total_cols), np.float64) if local is None else local
 
 
     @classmethod
-    def zeros(cls, total_rows, total_cols=None, dtype=None):
-        ga = cls(total_rows, total_cols, dtype)
+    def zeros(cls, total_rows, total_cols=None):
+        ga = cls(total_rows, total_cols)
         ga.local[:, :] = 0
         return ga
 
 
     @classmethod
-    def ones(cls, total_rows, total_cols=None, dtype=None):
-        ga = cls(total_rows, total_cols, dtype)
+    def ones(cls, total_rows, total_cols=None):
+        ga = cls(total_rows, total_cols)
         ga.local[:, :] = 1
         return ga
 
 
     @classmethod
-    def eye(cls, total_rows, dtype=None):
-        ga = cls.zeros(total_rows, total_rows, dtype)
+    def eye(cls, total_rows):
+        ga = cls.zeros(total_rows, total_rows)
         for row in range(ga.rows):
             ga.local[row, ga.offset + row] = 1
         return ga.local.ndim
@@ -61,7 +61,7 @@ class GlobalArray(object):
     def array(cls, total_array):
         total_array = np.array(total_array)
         assert total_array.ndim == 2
-        ga = cls(total_array.shape[0], total_array.shape[1], total_array.dtype)
+        ga = cls(total_array.shape[0], total_array.shape[1])
         ga.local[:] = total_array[ga.offset:ga.offset + ga.rows]
         return ga
 
@@ -136,24 +136,39 @@ class GlobalArray(object):
 
 
     def disp(self):
-        for n in range(self.nodes):
-            if n == self.node_id:
-                for r in range(self.rows):
-                    print("nodeid " + str(n) + ": " + "rownum " +
-                          str(r + self.offset) + ": " + str(self.local[r]))
+        for node_id in range(self.nodes):
+            if node_id == self.node_id:
+                for row in range(self.rows):
+                    print("nodeid " + str(node_id) + ": " + "rownum " +
+                          str(row + self.offset) + ": " + str(self.local[row]))
             self.comm.Barrier()
+
+
+    def transpose(self):
+        res = GlobalArray(self.total_cols, self.total_rows)
+        self_rows = self._get_rows_per_node(self.total_rows, self.nodes)
+        self_offsets = self._get_offsets_per_node(self.total_rows, self.nodes)
+
+        current_col = np.empty(self.total_rows, np.float64)
+        for col in range(self.total_cols):
+            local_current_col = self.local[:, col].copy()
+            self.comm.Allgatherv(
+                local_current_col,
+                [current_col, self_rows, self_offsets, MPI.DOUBLE])
+            if res.offset <= col < res.offset + res.rows:
+                res.local[col - res.offset, :] = current_col.T
+        return res
 
 
     def dot(self, other):
         assert self.total_cols == other.total_rows
         res = GlobalArray(self.total_rows, other.total_cols)
-
         other_rows = self._get_rows_per_node(other.total_rows, other.nodes)
         other_offsets = self._get_offsets_per_node(other.total_rows, other.nodes)
 
         current_col = np.empty(other.total_rows, np.float64)
         for col in range(other.total_cols):
-            local_current_col = other.local[:, col].astype(np.float64)
+            local_current_col = other.local[:, col].copy()
             self.comm.Allgatherv(
                 local_current_col,
                 [current_col, other_rows, other_offsets, MPI.DOUBLE])
@@ -202,7 +217,6 @@ class GlobalArray(object):
                 raise Exception("MPI rank error")
 
             self.comm.Barrier()
-
             recvdata = self.comm.allreduce(senddata, op=MPI.MAXLOC)
 
             if current_pivot_node == recvdata[1]:  # If exchange is local

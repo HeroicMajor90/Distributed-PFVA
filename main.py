@@ -3,6 +3,24 @@ from global_array import GlobalArray
 import numpy as np
 from mpi4py import MPI
 
+print("TEST: Matrix Transpose")
+shape = np.empty(2, dtype=np.int32)
+for i in range(1000):
+    shape[:] = np.random.randint(1, 1000, 2, np.int32)
+    MPI.COMM_WORLD.Bcast(shape)
+    A = 1000 * np.random.rand(shape[0], shape[1])
+    MPI.COMM_WORLD.Bcast(A)
+    A_ga = GlobalArray.array(A)
+    AT_ga = GlobalArray.array(A.transpose())
+
+    if A_ga.transpose() != AT_ga:
+        A_ga.disp()
+        AT_ga.disp()
+        A_ga.transpose().disp()
+        raise Exception("FAIL")
+    elif MPI.COMM_WORLD.Get_rank() == 0:
+        print(i)
+
 print("TEST: Matrix RREF")
 shape = np.empty(1, dtype=np.int32)
 for i in range(1000):
@@ -14,14 +32,15 @@ for i in range(1000):
         continue  # Skip for now
     B = np.eye(shape[0])
     X = np.concatenate((A, B), axis=1)
-    print(X)
+    if MPI.COMM_WORLD.Get_rank() == 0: print(X)
     X_ga = GlobalArray.array(X)
+    X_ga.disp()
     X_ga.rref()
     X_ga.disp()
 
     #A_inv = np.linalg.inv(A)
     #C_ga = GlobalArray.array(C)
-    #if C_ga != A_ga.dot(B_ga) and MPI.COMM_WORLD.Get_rank() == 0:
+    #if C_ga != A_ga.dot(B_ga):
     #    (C_ga - A_ga.dot(B_ga)).disp()
     #    raise Exception("FAIL")
     #if C_ga == A_ga.dot(B_ga) and MPI.COMM_WORLD.Get_rank() == 0:
@@ -40,9 +59,8 @@ for i in range(1000):
     B_ga = GlobalArray.array(B)
     C = A.dot(B)
     C_ga = GlobalArray.array(C)
-    if C_ga != A_ga.dot(B_ga) and MPI.COMM_WORLD.Get_rank() == 0:
+    if C_ga != A_ga.dot(B_ga):
         (C_ga - A_ga.dot(B_ga)).disp()
         raise Exception("FAIL")
     if C_ga == A_ga.dot(B_ga) and MPI.COMM_WORLD.Get_rank() == 0:
         print(i)
-

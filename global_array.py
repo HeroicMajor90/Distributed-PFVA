@@ -88,11 +88,11 @@ class GlobalArray(object):
 
 
     def to_np(self):
-        np_array = np.empty((self.total_rows, self.total_rows), np.float64)
+        np_array = np.empty((self.total_rows, self.total_cols), np.float64)
         recv_elems = [self.total_cols * rows for rows in
                       self._get_rows_per_node(self.total_rows, self.nodes)]
         recv_offsets = [self.total_cols * offset for offset in
-                        self._get_offset_per_node(self.total_rows, self.nodes)]
+                        self._get_offsets_per_node(self.total_rows, self.nodes)]
         self.comm.Allgatherv(
             self.local, [np_array, recv_elems, recv_offsets, MPI.DOUBLE])
         return np_array

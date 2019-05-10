@@ -68,7 +68,7 @@ class GlobalArray(object):
 
     @classmethod
     def from_file(cls, filename, **kwargs):
-        return cls.array(np.genfromtxt(filename, **kwargs))
+        return cls.array(np.loadtxt(filename, **kwargs))
 
 
     def __add__(self, other):
@@ -123,6 +123,16 @@ class GlobalArray(object):
             key_in_local = self.offset <= key < self.offset + self.rows
             return GlobalArray(
                 1, self.M, local=self.local[key - self.offset, :] if key_in_local else None)
+
+
+    def __eq__(self, other):  # Total-wise
+        eq = np.array([np.allclose(self.local, other.local)])
+        self.comm.Allreduce(eq, eq, op=MPI.LAND)
+        return eq[0]
+
+
+    def __ne__(self, other):  # Total-wise
+        return not (self == other)
 
 
     def disp(self):
@@ -275,9 +285,3 @@ class GlobalArray(object):
                     c = self.local[local_row, current_column] / reduction_row[current_column]
                     for column in range(current_column, self.total_cols):
                         self.local[local_row, column] -= reduction_row[column] * c
-
-        ############# BACK SUBSTIUTION END ###############
-
-        if self.node_id == 0:
-            print("")
-        self.disp()

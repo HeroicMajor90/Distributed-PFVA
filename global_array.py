@@ -17,13 +17,20 @@ class GlobalArray(object):
                 for node_id in range(nodes)]
 
 
-    def key2id(self, key, total_idxs=None, nodes=None):
-        idxs = self.total_rows if not total_rows else total_rows
+    def _row2nodeid(self, key, total_rows=None, nodes=None):
+        rows = self.total_rows if not total_rows else total_rows
         nodes = self.nodes if not nodes else nodes
+        for node_id in range(nodes):
+            if key < rows / nodes * node_id + min(node_id, rows % nodes):
+                return node_id - 1
 
-        max_id = key / (idxs / nodes)
+        return node_id
 
-        return max_id - (max_id > (key % nodes) < (idxs % nodes))
+
+    def _cumsum(self, array):
+        cumsum = np.zeros(len(array))
+        cumsum[1:] = np.cumsum(array[:-1])
+        return cumsum
 
 
     def __init__(self, total_rows, total_cols=None, dtype=None, local=None):
@@ -129,14 +136,42 @@ class GlobalArray(object):
             start, stop, step = key.indices(self.total_rows)
             assert step > 0, 'Negative steps are not currently supported'
 
-            start = start + self.total_rows if start < 0 else start
-            stop = stop + self.total_rows if stop < 0 else stop
+            start = start + self.total_rows if start < 0 else max(start, 0)
+            stop = stop + self.total_rows if stop < 0 else min(stop, self.total_rows)
 
-            assert -1 < start and -1 < stop, 'Indices out of range'
+            s_amount = np.zeros(self.nodes).astype(int)
+            r_amount = np.zeros(self.nodes).astype(int)
 
+            new_total_rows = (stop - start) / step
+            rows_to_send = []
+
+            for new_idx, idx in enumerate(xrange(start, stop, step)):
+                s_node = self._row2nodeid(idx)
+                r_node = self._row2nodeid(new_idx, new_total_rows)
+
+                if s_node == self.node_id:
+                    rows_to_send.append(self.local[idx - self.offset, :])
+                    s_amount[r_node] += 1
+
+                if r_node == self.node_id:
+                    r_amount[s_node] += 1
+
+            s_offsets = self._cumsum(s_amount)*self.total_cols
+            r_offsets = self._cumsum(r_amount)*self.total_cols
+            s_amount *= self.total_cols
+            r_amount *= self.total_cols
+
+            sendbuf = np.asarray(rows_to_send, dtype=np.float64) if len(rows_to_send) else self.local
+            recvbuf = np.empty((max(r_amount.sum(), 1), self.total_cols), dtype=np.float64)
+
+            self.comm.Alltoallv(
+                [sendbuf, s_amount, s_offsets, MPI.DOUBLE],
+                [recvbuf, r_amount, r_offsets, MPI.DOUBLE])
+
+            return GlobalArray(new_total_rows, self.total_cols, local=recvbuf)
 
         elif isinstance(key, int):
-            id_with_local = self.key2id(key)
+            id_with_local = self._row2nodeid(key)
             if self.node_id == 0:
                 local = np.empty((1, self.total_cols))
                 self.comm.Recv([local, MPI.DOUBLE], source=id_with_local)
@@ -158,7 +193,7 @@ class GlobalArray(object):
         for n in range(self.nodes):
             if n == self.node_id:
                 for r in range(self.rows):
-                    print("nodeid " + str(n) + ": " + "rownum " +
+                    print("node_id " + str(n) + ": " + "rownum " +
                           str(r + self.offset) + ": " + str(self.local[r]))
             self.comm.Barrier()
 
@@ -185,6 +220,22 @@ class GlobalArray(object):
             self.comm.Barrier()
 
         return res
+
+
+    def transpose(self):
+        rows_per_node = self._get_rows_per_node(self.total_cols, self.nodes)
+        offsets = self._get_offsets_per_node(self.total_cols, self.nodes)
+        rows = rows_per_node[self.node_id]
+        cols = self.total_rows
+        recvbuf = np.empty((rows, cols))
+
+        print self.node_id, rows, cols
+
+        # self.comm.Alltoall([self.local.T, rows_per_node[self.node_id], offsets[self.node_id], MPI.DOUBLE],
+        #                     [recvbuf, rows_per_node[self.node_id], offsets[self.node_id], MPI.DOUBLE])
+
+        print self.comm.Alltoall(self.local, recvbuf)
+        return GlobalArray(rows, cols, local=recvbuf)
 
 
     def _global_to_local(self, y, x):

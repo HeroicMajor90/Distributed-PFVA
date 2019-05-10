@@ -276,6 +276,28 @@ class GlobalArray(object):
                 res.local[row, col] = self.local[row].dot(current_col)
         return res
 
+    def mean(self, axis=None):
+        # axis =    None is average of flattened array
+        #      =    0 is column wise
+        #      =    1 is row wise
+        if axis == 0:
+            colMean = GlobalArray(self.total_cols,1)
+            localSum = np.sum(self.local,axis=0)
+            globalSum = np.empty(self.total_cols, np.float64)
+            self.comm.Allreduce(localSum,globalSum,op=MPI.SUM)
+            meanVec = globalSum/self.total_rows
+            for col in range(colMean.rows):
+                colMean.local[col, 0] = meanVec[col+colMean.offset]
+            return colMean
+        else:
+            rowMean = GlobalArray(self.total_rows,1)
+            npMean = np.mean(self.local,axis=1)
+            for row in range(self.rows):
+                rowMean.local[row,0] = npMean[row]
+            if axis == 1:
+                return rowMean
+            else:
+                return rowMean.mean(axis=0)
 
     def _global_to_local(self, y, x):
         for nodeloop in range(self.nodes):

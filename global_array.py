@@ -194,7 +194,7 @@ class GlobalArray(object):
 
     def rref(self):
         eps = 1.0 / (10 ** 10)
-        error = False
+        error = np.array([False])
 
         for current_column in range(min(self.total_rows, self.total_cols)):
             mem = np.zeros(self.total_cols)
@@ -204,7 +204,7 @@ class GlobalArray(object):
 
             ############# SET MAX PIVOT START ###############
             if self.node_id < current_pivot_node or self.rows < 1:  # Node is irrelevant if above pivot
-                senddata = np.array([-1, self.node_id])
+                senddata = np.array([0, self.node_id],dtype=np.float64)
             elif self.node_id == current_pivot_node:  # If node is pivot_node
                 a = np.abs(self.local[pivotCoords[0]:self.rows, current_column])
                 maxind = np.argmax(a) + pivotCoords[0]
@@ -216,15 +216,18 @@ class GlobalArray(object):
             else:
                 raise Exception("MPI rank error")
 
+            recvdata = np.empty(2*self.nodes)
             self.comm.Barrier()
-            recvdata = self.comm.allreduce(senddata, op=MPI.MAXLOC)
+            self.comm.Allgather(senddata,recvdata)
+            maxnode = np.argmax(recvdata[0::2])
+            maxnode = recvdata[maxnode*2+1]
 
-            if current_pivot_node == recvdata[1]:  # If exchange is local
-                if self.node_id == recvdata[1] and pivotCoords[0] != maxind:
+            if current_pivot_node == maxnode:  # If exchange is local
+                if self.node_id == maxnode and pivotCoords[0] != maxind:
                     self.local[[maxind, pivotCoords[0]],
                     :] = self.local[[pivotCoords[0], maxind], :]
             else:  # If exchange is between nodes
-                if self.node_id == recvdata[1]:  # If, maxrow node
+                if self.node_id == maxnode:  # If, maxrow node
                     sendrow = self.local[maxind, :]
 
                     self.comm.Sendrecv(
@@ -236,7 +239,7 @@ class GlobalArray(object):
                     sendrow = self.local[pivotCoords[0], :]
 
                     self.comm.Sendrecv(
-                        sendrow, dest=recvdata[1], recvbuf=mem, source=recvdata[1])
+                        sendrow, dest=maxnode, recvbuf=mem, source=maxnode)
 
                     self.local[pivotCoords[0], :] = mem
             self.comm.Barrier()
@@ -247,19 +250,21 @@ class GlobalArray(object):
             if self.node_id == current_pivot_node:  # Check if singular
                 if np.abs(self.local[pivotCoords[0], pivotCoords[1]]) <= eps:
                     print("SINGULAR")
-                    error = True
-            error = self.comm.bcast(error, root=current_pivot_node)
-            if (error):
+                    error = np.array([True])
+            self.comm.Bcast(error, root=current_pivot_node)
+            if (error[0]):
                 return False
 
             ############# CHECK SINGULAR END ###############
 
             ############# ROW REDUCTION START ###############
 
-            if self.node_id == current_pivot_node:
-                mem = self.local[pivotCoords[0], :]
+            reduction_row = np.empty(self.total_cols,dtype=np.float64)
 
-            reduction_row = self.comm.bcast(mem, root=current_pivot_node)
+            if self.node_id == current_pivot_node:
+                reduction_row = self.local[pivotCoords[0], :] 
+
+            self.comm.Bcast(reduction_row, root=current_pivot_node)
 
             if self.node_id == current_pivot_node:
                 if pivotCoords[0] != self.rows:  # If there is local elimination to be done
@@ -282,10 +287,12 @@ class GlobalArray(object):
             current_pivot_node, pivotCoords = self._global_to_local(
                 current_column, current_column)
 
-            if self.node_id == current_pivot_node:
-                mem = self.local[pivotCoords[0], :]
+            reduction_row = np.empty(self.total_cols,dtype=np.float64)
 
-            reduction_row = self.comm.bcast(mem, root=current_pivot_node)
+            if self.node_id == current_pivot_node:
+                reduction_row = self.local[pivotCoords[0], :]
+
+            self.comm.Bcast(reduction_row, root=current_pivot_node)
 
             if self.node_id == current_pivot_node:
                 for row in range(pivotCoords[0]):  # Repeat for each local row over pivot

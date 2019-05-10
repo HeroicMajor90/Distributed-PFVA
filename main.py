@@ -17,7 +17,6 @@ for i in range(1000):
         raise Exception("FAIL")
     elif MPI.COMM_WORLD.Get_rank() == 0:
         print(i)
-    MPI.COMM_WORLD.Barrier()
 
 print("TEST: Matrix slicing")
 shape = np.empty(2, dtype=np.int32)
@@ -44,7 +43,6 @@ for i in range(1000):
         raise Exception("FAIL")
     elif MPI.COMM_WORLD.Get_rank() == 0:
         print(i)
-    MPI.COMM_WORLD.Barrier()
 
 print("TEST: Matrix Transpose")
 shape = np.empty(2, dtype=np.int32)

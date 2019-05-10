@@ -130,6 +130,7 @@ class GlobalArray(object):
     def __getitem__(self, key):
         if isinstance(key, slice):
             start, stop, step = key.indices(self.total_rows)
+
             assert step > 0, 'Negative steps are not currently supported'
 
             start = start + self.total_rows if start < 0 else max(start, 0)
@@ -138,10 +139,10 @@ class GlobalArray(object):
             s_amount = np.zeros(self.nodes).astype(int)
             r_amount = np.zeros(self.nodes).astype(int)
 
-            new_total_rows = (stop - start) / step
+            new_total_rows = len(range(start, stop, step))
             rows_to_send = []
 
-            for new_idx, idx in enumerate(xrange(start, stop, step)):
+            for new_idx, idx in enumerate(range(start, stop, step)):
                 s_node = self._row2nodeid(idx)
                 r_node = self._row2nodeid(new_idx, new_total_rows)
 
@@ -152,13 +153,13 @@ class GlobalArray(object):
                 if r_node == self.node_id:
                     r_amount[s_node] += 1
 
+            sendbuf = np.asarray(rows_to_send, dtype=np.float64) if len(rows_to_send) else self.local
+            recvbuf = np.empty((max(r_amount.sum(), 1), self.total_cols), dtype=np.float64)
+
             s_offsets = self._cumsum(s_amount)*self.total_cols
             r_offsets = self._cumsum(r_amount)*self.total_cols
             s_amount *= self.total_cols
             r_amount *= self.total_cols
-
-            sendbuf = np.asarray(rows_to_send, dtype=np.float64) if len(rows_to_send) else self.local
-            recvbuf = np.empty((max(r_amount.sum(), 1), self.total_cols), dtype=np.float64)
 
             self.comm.Alltoallv(
                 [sendbuf, s_amount, s_offsets, MPI.DOUBLE],

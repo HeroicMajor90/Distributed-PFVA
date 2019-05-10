@@ -388,7 +388,8 @@ def qr(A):
         y = A[k:, k]
         e = GlobalArray.zeros(y.total_rows, 1)
         e[0] = 1
-        w = y - np.sqrt(y.transponse().dot(y).to_np()) * e ###
+        sign = np.sign(y[0].to_np()) if y[0].to_np() != 0 else 1
+        w = y - sign * np.sqrt(y.transponse().dot(y).to_np()) * e
         v = w / np.sqrt(w.transpose().dot(w).to_np())
         H = GlobalArray.eye(A.total_rows)
         H[k:, k:] = GlobalArray.eye(A.total_rows - k) - 2 * v.dot(v.transpose())

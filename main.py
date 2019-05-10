@@ -3,6 +3,21 @@ from global_array import GlobalArray
 import numpy as np
 from mpi4py import MPI
 
+print("TEST: NP-2-GA-2-NP")
+shape = np.empty(2, dtype=np.int32)
+for i in range(1000):
+    shape[:] = np.random.randint(1, 1000, 2, np.int32)
+    MPI.COMM_WORLD.Bcast(shape)
+    A = 1000 * np.random.rand(shape[0], shape[1])
+    MPI.COMM_WORLD.Bcast(A)
+    A_ga = GlobalArray.array(A)
+    if not np.allclose(A, A_ga.to_np()):
+        A_ga.disp()
+        GlobalArray.array(A_ga.to_np()).disp()
+        raise Exception("FAIL")
+    elif MPI.COMM_WORLD.Get_rank() == 0:
+        print(i)
+
 print("TEST: Matrix slicing")
 shape = np.empty(2, dtype=np.int32)
 for i in range(1000):
@@ -80,12 +95,11 @@ for i in range(1000):
     stop = np.random.randint(start, max(start + 1, shape[0]), 1, np.int32)[0]
     step = np.random.randint(1, max(stop-start+1, 2), 1, np.int32)[0]
 
-    start = MPI.COMM_WORLD.bcast(start, root=0)
-    stop = MPI.COMM_WORLD.bcast(stop, root=0)
-    step = MPI.COMM_WORLD.bcast(step, root=0)
+    start = MPI.COMM_WORLD.bcast(start)
+    stop = MPI.COMM_WORLD.bcast(stop)
+    step = MPI.COMM_WORLD.bcast(step)
 
     AS_ga = GlobalArray.array(A[start:stop:step])
-
     Sliced_Array = A_ga[start:stop:step]
 
     if Sliced_Array != AS_ga:

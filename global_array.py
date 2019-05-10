@@ -140,6 +140,17 @@ class GlobalArray(object):
         return cls.array(np.loadtxt(filename, **kwargs))
 
 
+    def to_np(self):
+        np_array = np.empty((self.total_rows, self.total_cols), np.float64)
+        recv_elems = [self.total_cols * rows for rows in
+                      self._get_rows_per_node(self.total_rows, self.nodes)]
+        recv_offsets = [self.total_cols * offset for offset in
+                        self._get_offsets_per_node(self.total_rows, self.nodes)]
+        self.comm.Allgatherv(
+            self.local, [np_array, recv_elems, recv_offsets, MPI.DOUBLE])
+        return np_array
+
+
     def __add__(self, other):
         if isinstance(other, GlobalArray):
             return GlobalArray(self.total_rows,
@@ -412,3 +423,19 @@ class GlobalArray(object):
                     for column in range(current_column, self.total_cols):
                         self.local[local_row, column] -= (
                             reduction_row[column] * c)
+
+
+def qr(A):
+    assert A.total_rows >= A.total_cols
+    Q = GlobalArray.eye(A.total_rows)
+    for k in range(A.total_cols):
+        y = A[k:, k]
+        e = GlobalArray.zeros(y.total_rows, 1)
+        e[0] = 1
+        w = y - np.sqrt(y.transponse().dot(y).to_np()) * e ###
+        v = w / np.sqrt(w.transpose().dot(w).to_np())
+        H = GlobalArray.eye(A.total_rows)
+        H[k:, k:] = GlobalArray.eye(A.total_rows - k) - 2 * v.dot(v.transpose())
+        A = H.dot(A)
+        Q = Q.dot(H)
+    return Q, A  # A has been transformed into R

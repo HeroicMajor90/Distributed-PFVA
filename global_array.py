@@ -104,8 +104,6 @@ class GlobalArray(object):
 
 
     def __rsub__(self, other):
-        if isinstance(other, GlobalArray):
-            return GlobalArray(self.total_rows, self.total_cols, local=other.local - self.local)
         return GlobalArray(self.total_rows, self.total_cols, local=other - self.local)
 
 
@@ -126,8 +124,6 @@ class GlobalArray(object):
 
 
     def __rdiv__(self, other):
-        if isinstance(other, GlobalArray):
-            return GlobalArray(self.total_rows, self.total_cols, local=other.local / self.local)
         return GlobalArray(self.total_rows, self.total_cols, local=other / self.local)
 
 

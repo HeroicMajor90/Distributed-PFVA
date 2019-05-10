@@ -135,26 +135,20 @@ class GlobalArray(object):
 
 
     def dot(self, other):
-        assert self.M == other.total_rows
+        assert self.total_cols == other.total_rows
         res = GlobalArray(self.total_rows, other.total_cols)
 
-        local_size = np.array([other.rows])
-        sizes = np.empty(other.nodes, local_size.dtype)
-        self.comm.Allgather(local_size, sizes)
-
-        local_offset = np.array([other.offset])
-        offsets = np.empty(other.nodes, local_offset.dtype)
-        self.comm.Allgather(local_offset, offsets)
+        other_rows = self._get_rows_per_node(other.total_rows, other.nodes)
+        other_offsets = self._get_offsets_per_node(other.total_rows, other.nodes)
 
         current_col = np.empty(other.total_rows, np.float64)
-        for c in range(other.total_cols):
-            local_current_col = other.local[:, c].copy()
-            print(local_current_col)
+        for col in range(other.total_cols):
+            local_current_col = other.local[:, col].astype(np.float64)
             self.comm.Allgatherv(
-                local_current_col, [current_col, other.rows, other.offset, MPI.DOUBLE])
-            print(current_col)
-            self.comm.Barrier()
-
+                local_current_col,
+                [current_col, other_rows, other_offsets, MPI.DOUBLE])
+            for row in range(self.rows):
+                res.local[row, col] = self.local[row].dot(current_col)
         return res
 
 

@@ -31,20 +31,18 @@ for i in range(1000):
     if np.linalg.det(A) == 0:
         continue  # Skip for now
     B = np.eye(shape[0])
-    X = np.concatenate((A, B), axis=1)
-    if MPI.COMM_WORLD.Get_rank() == 0: print(X)
-    X_ga = GlobalArray.array(X)
-    X_ga.disp()
-    X_ga.rref()
-    X_ga.disp()
 
-    #A_inv = np.linalg.inv(A)
-    #C_ga = GlobalArray.array(C)
-    #if C_ga != A_ga.dot(B_ga):
-    #    (C_ga - A_ga.dot(B_ga)).disp()
-    #    raise Exception("FAIL")
-    #if C_ga == A_ga.dot(B_ga) and MPI.COMM_WORLD.Get_rank() == 0:
-    #    print(i)
+    X = np.concatenate((A, B), axis=1)
+    X_ga = GlobalArray.array(X)
+    X_ga.rref()
+
+    Ainv = np.linalg.inv(A)
+    Ainv_ga = GlobalArray.array(np.concatenate((B, Ainv), axis=1))
+    if Ainv_ga != X_ga:
+        X_ga.disp()
+        raise Exception("FAIL")
+    elif MPI.COMM_WORLD.Get_rank() == 0:
+        print(i)
 
 print("TEST: Matrix Multiplication")
 shape = np.empty(3, dtype=np.int32)
@@ -62,5 +60,5 @@ for i in range(1000):
     if C_ga != A_ga.dot(B_ga):
         (C_ga - A_ga.dot(B_ga)).disp()
         raise Exception("FAIL")
-    if C_ga == A_ga.dot(B_ga) and MPI.COMM_WORLD.Get_rank() == 0:
+    elif MPI.COMM_WORLD.Get_rank() == 0:
         print(i)

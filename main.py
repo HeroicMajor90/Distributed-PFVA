@@ -3,13 +3,16 @@ from global_array import GlobalArray, sort_by_first_column
 import numpy as np
 from mpi4py import MPI
 
+TRIES_PER_TEST = 100
+
 def im_root():
     return MPI.COMM_WORLD.Get_rank() == 0
 
+
 if im_root(): print("TEST: Sort by First Column")
 shape = np.empty(2, dtype=np.int32)
-for i in range(1000):
-    shape[:] = np.random.randint(1, 7, 2, np.int32)
+for i in range(TRIES_PER_TEST):
+    shape[:] = np.random.randint(1, 1000, 2, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
@@ -22,9 +25,10 @@ for i in range(1000):
     elif im_root():
         print(i)
 
+
 if im_root(): print("TEST: Matrix slice assignment")
 shape = np.empty(2, dtype=np.int32)
-for i in range(1000):
+for i in range(TRIES_PER_TEST):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
@@ -68,9 +72,10 @@ for i in range(1000):
     elif im_root():
         print(i)
 
+
 if im_root(): print("TEST: Matrix Std: Column Wise")
 shape = np.empty(2, dtype=np.int32)
-for i in range(1000):
+for i in range(TRIES_PER_TEST):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
@@ -86,9 +91,10 @@ for i in range(1000):
     elif im_root():
         print(i)
 
+
 if im_root(): print("TEST: Matrix Std: Row Wise")
 shape = np.empty(2, dtype=np.int32)
-for i in range(1000):
+for i in range(TRIES_PER_TEST):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
@@ -104,9 +110,10 @@ for i in range(1000):
     elif im_root():
         print(i)
 
+
 if im_root(): print("TEST: Matrix Std: Flat")
 shape = np.empty(2, dtype=np.int32)
-for i in range(1000):
+for i in range(TRIES_PER_TEST):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
@@ -123,9 +130,10 @@ for i in range(1000):
     elif im_root():
         print(i)
 
+
 if im_root(): print("TEST: Matrix Average: Column Wise")
 shape = np.empty(2, dtype=np.int32)
-for i in range(1000):
+for i in range(TRIES_PER_TEST):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
@@ -141,8 +149,9 @@ for i in range(1000):
     elif im_root():
         print(i)
 
+
 if im_root(): print("TEST: Matrix Average: Row Wise")
-for i in range(1000):
+for i in range(TRIES_PER_TEST):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
@@ -158,8 +167,9 @@ for i in range(1000):
     elif im_root():
         print(i)
 
+
 if im_root(): print("TEST: Matrix Average: Flat")
-for i in range(1000):
+for i in range(TRIES_PER_TEST):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
@@ -175,9 +185,10 @@ for i in range(1000):
     elif im_root():
         print(i)
 
+
 if im_root(): print("TEST: NP-2-GA-2-NP")
 shape = np.empty(2, dtype=np.int32)
-for i in range(1000):
+for i in range(TRIES_PER_TEST):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
@@ -190,9 +201,10 @@ for i in range(1000):
     elif im_root():
         print(i)
 
+
 if im_root(): print("TEST: Matrix slicing")
 shape = np.empty(2, dtype=np.int32)
-for i in range(1000):
+for i in range(TRIES_PER_TEST):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
@@ -231,7 +243,7 @@ for i in range(1000):
 
 if im_root(): print("TEST: Matrix indexing")
 shape = np.empty(2, dtype=np.int32)
-for i in range(1000):
+for i in range(TRIES_PER_TEST):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
@@ -256,7 +268,7 @@ for i in range(1000):
 
 if im_root(): print("TEST: Matrix row slicing")
 shape = np.empty(2, dtype=np.int32)
-for i in range(1000):
+for i in range(TRIES_PER_TEST):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
@@ -284,7 +296,7 @@ for i in range(1000):
 
 if im_root(): print("TEST: Matrix Transpose")
 shape = np.empty(2, dtype=np.int32)
-for i in range(1000):
+for i in range(TRIES_PER_TEST):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
@@ -300,9 +312,10 @@ for i in range(1000):
     elif im_root():
         print(i)
 
+
 if im_root(): print("TEST: Matrix RREF")
 shape = np.empty(1, dtype=np.int32)
-for i in range(1000):
+for i in range(TRIES_PER_TEST):
     shape[:] = np.random.randint(1, 10, 1, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[0])
@@ -323,9 +336,10 @@ for i in range(1000):
     elif im_root():
         print(i)
 
+
 if im_root(): print("TEST: Matrix Multiplication")
 shape = np.empty(3, dtype=np.int32)
-for i in range(1000):
+for i in range(TRIES_PER_TEST):
     shape[:] = np.random.randint(1, 1000, 3, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])

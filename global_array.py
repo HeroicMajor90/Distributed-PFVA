@@ -368,11 +368,7 @@ class GlobalArray(object):
                 return colStd
             else:
                 colStd = GlobalArray(1,1)
-                print(globalSum)
-                print(np.sum(globalSum))
-                print(np.sum(globalSum)/(self.total_rows*self.total_cols))
                 varis = np.sqrt(np.sum(globalSum)/(self.total_rows*self.total_cols))
-                print(varis)
                 if self.node_id == 0:
                     colStd.local[0,0] = varis
                 return colStd

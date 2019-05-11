@@ -11,7 +11,7 @@ def im_root():
 
 if im_root(): print("TEST: QR Decomposition")
 shape = np.empty(2, dtype=np.int32)
-for i in range(1000):
+for i in range(TRIES_PER_TEST):
     shape[:] = np.random.randint(1, 100, 2, np.int32)
     shape[0] = shape.max()
     MPI.COMM_WORLD.Bcast(shape)
@@ -23,9 +23,9 @@ for i in range(1000):
     Q_trans_ga = Q_ga.transpose()
     Eye_ga = GlobalArray.eye(shape[0])
 
-    if (Q_ga.dot(R_ga) != A_ga
-    	or Q_ga.dot(Q_trans_ga) != Eye_ga
-    	or Q_trans_ga.dot(Q_ga) != Eye_ga):
+    if (Q_ga.dot(R_ga) != A_ga or
+            Q_ga.dot(Q_trans_ga) != Eye_ga or
+            Q_trans_ga.dot(Q_ga) != Eye_ga):
         Q_ga.disp()
         R_ga.disp()
         Q_ga.dot(R_ga).disp()
@@ -342,7 +342,7 @@ for i in range(TRIES_PER_TEST):
 if im_root(): print("TEST: Matrix RREF")
 shape = np.empty(1, dtype=np.int32)
 for i in range(TRIES_PER_TEST):
-    shape[:] = np.random.randint(1, 1000, 1, np.int32)
+    shape[:] = np.random.randint(1, 100, 1, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[0])
     MPI.COMM_WORLD.Bcast(A)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from matplotlib import pyplot
 import re
 import numpy as np
 import cv2
@@ -28,15 +28,13 @@ def read_pgm(filename, byteorder='>'):
 
 
 if __name__ == "__main__":
-    from matplotlib import pyplot
-
-    classMFile = "../classM.txt"
-    dataMFile = "../dataM.txt"
+    classMFile = "classM.txt"
+    dataMFile = "dataM.txt"
 
     classM = np.zeros(8)
     dataM = np.array([], dtype=np.str).reshape(0,256*256)
     print(dataM)
-    with open('../miadata.txt','r+') as f:
+    with open('miadata.txt','r+') as f:
         for line in f:
             old = line
             noCoords = re.sub(r'(?<!\S)\d+(?!\S)','',old)

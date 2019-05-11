@@ -2,9 +2,9 @@
 from global_array import GlobalArray
 import numpy as np
 
-classM = GlobalArray.from_file("../classM.txt")
+classM = GlobalArray.from_file("classM.txt")
 print("classM imported")
-dataM = GlobalArray.from_file("../dataM.txt")
+dataM = GlobalArray.from_file("dataM.txt")
 print("dataM imported")
 
 classMean = classM.mean(axis=0)
@@ -29,8 +29,8 @@ dataStd = dataStd.transpose()
 dataM = (dataM - dataMean)/dataStd
 print("dataM centered and normalized")
 
-classMCentFile = "../classMCent.txt"
-dataMCentFile = "../dataMCent.txt"
+classMCentFile = "classMCent.txt"
+dataMCentFile = "dataMCent.txt"
 
 np.savetxt(classMCentFile, classM.to_np(), delimiter=' ', fmt="%s") 
 print("classM saved to " + classMCentFile)

@@ -399,8 +399,8 @@ class GlobalArray(object):
             mem = np.zeros(self.total_cols)
             current_pivot_node = self._row2nodeid(current_column)
             localRow = self._get_offsets_per_node(self.total_rows,self.nodes)
-            pivotCoords = [current_column-localRow[current_pivot_node],\
-                                                            current_column]
+            pivotCoords = [current_column - localRow[current_pivot_node],
+                           current_column]
 
             ############# CHECK SINGULAR START ###############
 
@@ -413,8 +413,8 @@ class GlobalArray(object):
                         senddata = np.array([0, self.node_id],dtype=np.float64)
                     elif self.node_id == current_pivot_node:  
                         # If node is pivot_node
-                        a = np.abs(self.local[pivotCoords[0]:self.rows,\
-                             current_column])
+                        a = np.abs(self.local[pivotCoords[0]:self.rows,
+                                              current_column])
                         maxind = np.argmax(a) + pivotCoords[0]
                         senddata = np.array([np.amax(a), self.node_id])
                     elif self.node_id > current_pivot_node:
@@ -432,8 +432,8 @@ class GlobalArray(object):
 
                     if current_pivot_node == maxnode:  # If exchange is local
                         if self.node_id == maxnode and pivotCoords[0]!= maxind:
-                            self.local[[maxind, pivotCoords[0]],
-                            :] = self.local[[pivotCoords[0], maxind], :]
+                            self.local[[maxind, pivotCoords[0]], :] = (
+                                self.local[[pivotCoords[0], maxind], :])
                     else:  # If exchange is between nodes
                         if self.node_id == maxnode:  # If, maxrow node
                             sendrow = self.local[maxind, :]
@@ -446,9 +446,8 @@ class GlobalArray(object):
                         if self.node_id == current_pivot_node: 
                             # If, pivot node
                             sendrow = self.local[pivotCoords[0], :]
-                            self.comm.Sendrecv(
-                                sendrow, dest=maxnode, recvbuf=mem, \
-                                                                source=maxnode)
+                            self.comm.Sendrecv(sendrow, dest=maxnode,
+                                               recvbuf=mem, source=maxnode)
 
                             self.local[pivotCoords[0], :] = mem
                     ############# SET MAX PIVOT END ###############
@@ -457,7 +456,7 @@ class GlobalArray(object):
                     print("SINGULAR")
                     error = np.array([True])
             self.comm.Bcast(error, root=current_pivot_node)
-            if (error[0]):
+            if error[0]:
                 return False
 
             ############# CHECK SINGULAR END ###############

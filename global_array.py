@@ -373,23 +373,6 @@ class GlobalArray(object):
                     colStd.local[0,0] = varis
                 return colStd
 
-    def _global_to_local(self, y, x):
-        for nodeloop in range(self.nodes):
-            low_bound = ((self.total_rows / self.nodes * nodeloop) +
-                         min(nodeloop, self.total_rows % self.nodes))
-            high_bound = low_bound + self.total_rows / self.nodes + \
-                         (nodeloop < self.total_rows % self.nodes)
-            if (low_bound <= y and high_bound > y):
-                node = nodeloop
-                loc_y = y - low_bound
-                loc_x = x
-                return node, [loc_y, loc_x]
-        raise Exception("y value: "
-                        + str(y)
-                        + " out of bounds, higher than or eq to"
-                        + str(self.total_rows))
-
-
     def rref(self):
         eps = 1.0 / (10 ** 10)
         error = np.array([False])
@@ -397,9 +380,9 @@ class GlobalArray(object):
         for current_column in range(min(self.total_rows, self.total_cols)):
             mem = np.zeros(self.total_cols)
 
-            current_pivot_node, pivotCoords = self._global_to_local(
-                current_column, current_column)
-
+            current_pivot_node = self._row2nodeid(current_column)
+            localRow = self._get_offsets_per_node(self.total_rows,self.nodes)
+            pivotCoords = [current_column-localRow[current_pivot_node],current_column]
             ############# SET MAX PIVOT START ###############
             if self.node_id < current_pivot_node or self.rows < 1:
                 # Node is irrelevant if above pivot
@@ -491,8 +474,10 @@ class GlobalArray(object):
         ############# BACK SUBSTIUTION START ###############
         for current_column in range(
                 min(self.total_rows, self.total_cols) - 1, -1, -1):
-            current_pivot_node, pivotCoords = self._global_to_local(
-                current_column, current_column)
+            
+            current_pivot_node = self._row2nodeid(current_column)
+            localRow = self._get_offsets_per_node(self.total_rows,self.nodes)
+            pivotCoords = [current_column-localRow[current_pivot_node],current_column]
 
             reduction_row = np.empty(self.total_cols,dtype=np.float64)
 

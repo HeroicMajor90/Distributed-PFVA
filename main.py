@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from global_array import GlobalArray, sort_by_first_column
+from global_array import GlobalArray, sort_by_first_column, qr
 import numpy as np
 from mpi4py import MPI
 
@@ -7,6 +7,32 @@ TRIES_PER_TEST = 100
 
 def im_root():
     return MPI.COMM_WORLD.Get_rank() == 0
+
+
+if im_root(): print("TEST: QR Decomposition")
+shape = np.empty(2, dtype=np.int32)
+for i in range(1000):
+    shape[:] = np.random.randint(1, 100, 2, np.int32)
+    shape[0] = shape.max()
+    MPI.COMM_WORLD.Bcast(shape)
+    A = 1000 * np.random.rand(shape[0], shape[1])
+    MPI.COMM_WORLD.Bcast(A)
+    A_ga = GlobalArray.array(A)
+
+    Q_ga, R_ga = qr(A_ga)
+    Q_trans_ga = Q_ga.transpose()
+    Eye_ga = GlobalArray.eye(shape[0])
+
+    if (Q_ga.dot(R_ga) != A_ga
+    	or Q_ga.dot(Q_trans_ga) != Eye_ga
+    	or Q_trans_ga.dot(Q_ga) != Eye_ga):
+        Q_ga.disp()
+        R_ga.disp()
+        Q_ga.dot(R_ga).disp()
+        A_ga.disp()
+        raise Exception("FAIL")
+    elif im_root():
+        print(i)
 
 
 if im_root(): print("TEST: Sort by First Column")

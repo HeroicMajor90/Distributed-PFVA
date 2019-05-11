@@ -23,7 +23,6 @@ class GlobalArray(object):
         for node_id in range(nodes):
             if key < rows / nodes * node_id + min(node_id, rows % nodes):
                 return node_id - 1
-
         return node_id
 
 
@@ -36,7 +35,6 @@ class GlobalArray(object):
     def _key2slice(self, key):
         assert (isinstance(key, slice) or isinstance(key, (int, np.integer)),
                 'Keys must be slices or integers')
-        
         return key if isinstance(key, slice) else slice(key, key+1)
 
 
@@ -216,7 +214,7 @@ class GlobalArray(object):
             return self._slice_array(
                 *(self._key2slice(axis_key) for axis_key in key))
         else:
-            raise TypeError, 'Global Arrays indices must be integers or slice'
+            raise TypeError("Global Arrays indices must be integers or slice")
 
 
     def __setitem__(self, ):
@@ -320,7 +318,7 @@ class GlobalArray(object):
             else:
                 raise Exception("MPI rank error")
 
-            recvdata = np.empty(2*self.nodes)
+            recvdata = np.empty(2 * self.nodes)
             self.comm.Barrier()
             self.comm.Allgather(senddata,recvdata)
             maxnode = np.argmax(recvdata[0::2])
@@ -416,7 +414,7 @@ class GlobalArray(object):
                 self.local[pivotCoords[0], :] /= self.local[pivotCoords[0],
                                                             pivotCoords[1]]
 
-            if self.node_id < current_pivot_node:  # In progress
+            if self.node_id < current_pivot_node:
                 for local_row in range(self.rows):
                     c = (self.local[local_row, current_column]
                          / reduction_row[current_column])
@@ -440,3 +438,40 @@ def qr(A):
         A = H.dot(A)
         Q = Q.dot(H)
     return Q, A  # A has been transformed into R
+
+
+def sort_by_first_column(A):
+    rows_per_node = A._get_rows_per_node(A.total_rows, A.nodes)
+    local = A.local[A.local[:, 0].argsort()]
+    d = 1
+    while d < A.nodes:
+        if (A.node_id - d) % (2 * d) == 0 and A.node_id - d >= 0:
+            A.comm.Send(local, dest=A.node_id - d)
+        elif A.node_id % (2 * d) == 0 and A.node_id + d < A.nodes:
+            other = np.empty(
+                (sum(rows_per_node[A.node_id + d:A.node_id + 2 * d]),
+                 A.total_cols),
+                np.float64)
+            A.comm.Recv(other, source=A.node_id + d)
+            new_local = np.empty(
+                (local.shape[0] + other.shape[0], A.total_cols), np.float64)
+            local_idx = 0
+            other_idx = 0
+            while local_idx < local.shape[0] and other_idx < other.shape[0]:
+                if local[local_idx, 0] > other[other_idx, 0]:
+                    new_local[local_idx + other_idx] = local[local_idx]
+                    local_idx += 1
+                else:
+                    new_local[local_idx + other_idx] = other[other_idx]
+                    other_idx += 1
+            while local_idx < local.shape[0]:
+                new_local[local_idx + other_idx] = local[local_idx]
+                local_idx += 1
+            while local_idx < local.shape[0]:
+                new_local[local_idx + other_idx] = other[other_idx]
+                other_idx += 1
+            local = new_local
+    sorted_array = (local if A.node_id == 0
+                    else np.empty((A.total_rows, A.total_cols), np.float64))
+    A.comm.Bcast(sorted_array)
+    return GlobalArray.array(sorted_array)

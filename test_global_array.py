@@ -22,7 +22,6 @@ for i in range(TRIES_PER_TEST):
     Q_ga, R_ga = qr(A_ga)
     Q_trans_ga = Q_ga.transpose()
     Eye_ga = GlobalArray.eye(shape[0])
-
     if (Q_ga.dot(R_ga) != A_ga or
             Q_ga.dot(Q_trans_ga) != Eye_ga or
             Q_trans_ga.dot(Q_ga) != Eye_ga):

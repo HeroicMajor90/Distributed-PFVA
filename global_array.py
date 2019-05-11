@@ -143,6 +143,11 @@ class GlobalArray(object):
             (self.rows, total_cols), np.float64) if local is None else local
 
 
+    def copy(self):
+        return GlobalArray(
+            self.total_rows, self.total_cols, local=self.local.copy())
+
+
     @classmethod
     def zeros(cls, total_rows, total_cols=None):
         ga = cls(total_rows, total_cols)
@@ -521,19 +526,24 @@ class GlobalArray(object):
 
 def qr(A):
     assert A.total_rows >= A.total_cols
-    Q = GlobalArray.eye(A.total_rows)
-    for k in range(A.total_cols):
-        y = A[k:, k]
+    R = A.copy()
+    V = GlobalArray.zeros(R.total_rows, R.total_cols)
+    for k in range(R.total_cols):
+        y = R[k:, k]
         e = GlobalArray.zeros(y.total_rows, 1)
         e[0] = 1
         sign = np.sign(y[0].to_np()) if y[0].to_np() != 0 else 1
         w = y + float(sign) * float(np.sqrt(y.transpose().dot(y).to_np())) * e
         v = w / float(np.sqrt(w.transpose().dot(w).to_np()))
-        H = GlobalArray.eye(A.total_rows)
-        H[k:, k:] = GlobalArray.eye(A.total_rows - k) - 2 * v.dot(v.transpose())
-        A = H.dot(A)
-        Q = Q.dot(H)
-    return Q, A  # A has been transformed into R
+        V[k:, k] = v
+        Rk = R[k:, k:]
+        R[k:, k:] = Rk - 2 * v.dot(v.transpose().dot(Rk))
+    Q = GlobalArray.eye(R.total_rows)
+    for k in range(R.total_cols - 1, -1, -1):
+        v = V[k:, k]
+        Qk = Q[k:, k:]
+        Q[k:, k:] = Qk - 2 * v.dot(v.transpose().dot(Qk))
+    return Q, R
 
 
 def sort_by_first_column(A):

@@ -194,9 +194,7 @@ class GlobalArray(object):
 
     def __add__(self, other):
         if isinstance(other, GlobalArray):
-            return GlobalArray(self.total_rows,
-                               self.total_cols,
-                               local=self.local + other.local)
+            other = other.to_np() if other.total_rows == 1 else other.local
         return GlobalArray(
             self.total_rows, self.total_cols, local=self.local + other)
 
@@ -207,9 +205,7 @@ class GlobalArray(object):
 
     def __sub__(self, other):
         if isinstance(other, GlobalArray):
-            return GlobalArray(self.total_rows,
-                               self.total_cols,
-                               local=self.local - other.local)
+            other = other.to_np() if other.total_rows == 1 else other.local
         return GlobalArray(
             self.total_rows, self.total_cols, local=self.local - other)
 
@@ -221,9 +217,7 @@ class GlobalArray(object):
 
     def __mul__(self, other):
         if isinstance(other, GlobalArray):
-            return GlobalArray(self.total_rows,
-                               self.total_cols,
-                               local=self.local * other.local)
+            other = other.to_np() if other.total_rows == 1 else other.local
         return GlobalArray(
             self.total_rows, self.total_cols, local=self.local * other)
 
@@ -234,9 +228,7 @@ class GlobalArray(object):
 
     def __div__(self, other):
         if isinstance(other, GlobalArray):
-            return GlobalArray(self.total_rows,
-                               self.total_cols,
-                               local=self.local / other.local)
+            other = other.to_np() if other.total_rows == 1 else other.local
         return GlobalArray(
             self.total_rows, self.total_cols, local=self.local / other)
 

@@ -34,8 +34,8 @@ class GlobalArray(object):
 
 
     def _key2slice(self, key):
-        assert (isinstance(key, slice) or isinstance(key, (int, np.integer)),
-                'Keys must be slices or integers')
+        assert isinstance(key, slice) or isinstance(key, (int, np.integer)), (
+                "Keys must be slices or integers")
         
         return key if isinstance(key, slice) else slice(key, key+1)
 
@@ -43,7 +43,7 @@ class GlobalArray(object):
     def _slice_array(self, slice_axis1, slice_axis2=None):
         start, stop, step = slice_axis1.indices(self.total_rows)
         slice_axis2 = slice_axis2 if slice_axis2 else slice(self.total_cols)
-        assert step > 0, 'Negative steps are not currently supported'
+        assert step > 0, "Negative steps are not currently supported"
 
         start = start + self.total_rows if start < 0 else max(start, 0)
         stop = (stop + self.total_rows
@@ -68,11 +68,9 @@ class GlobalArray(object):
             if r_node == self.node_id:
                 r_amount[s_node] += 1
 
-        sendbuf = np.asarray(
-            rows_to_send if rows_to_send else self.local, dtype=np.float64)
+        sendbuf = np.asarray(rows_to_send, dtype=np.float64)
 
-        recvbuf = np.empty(
-            (max(r_amount.sum(), 1), new_total_cols), dtype=np.float64)
+        recvbuf = np.empty((r_amount.sum(), new_total_cols), dtype=np.float64)
 
         s_offsets = self._cumsum(s_amount)*new_total_cols
         r_offsets = self._cumsum(r_amount)*new_total_cols
@@ -83,7 +81,50 @@ class GlobalArray(object):
             [sendbuf, s_amount, s_offsets, MPI.DOUBLE],
             [recvbuf, r_amount, r_offsets, MPI.DOUBLE])
 
-        return GlobalArray(new_total_rows, self.total_cols, local=recvbuf)
+        return GlobalArray(new_total_rows, new_total_cols, local=recvbuf)
+
+
+    def _setslice_array(self, slice_axis1, slice_axis2=None, ga=None):
+        start, stop, step = slice_axis1.indices(self.total_rows)
+        slice_axis2 = slice_axis2 if slice_axis2 else slice(self.total_cols)
+        assert step > 0, "Negative steps are not currently supported"
+
+        start = start + self.total_rows if start < 0 else max(start, 0)
+        stop = (stop + self.total_rows
+                if stop < 0 else
+                min(stop, self.total_rows))
+
+        s_amount = np.zeros(self.nodes).astype(int)
+        r_amount = np.zeros(self.nodes).astype(int)
+
+        new_total_cols = len(range(*slice_axis2.indices(self.total_cols)))
+        rows_to_send = []
+
+        for s_idx, r_idx in enumerate(range(start, stop, step)):
+            s_node = self._row2nodeid(s_idx, ga.total_rows)
+            r_node = self._row2nodeid(r_idx)
+
+            if s_node == self.node_id:
+                rows_to_send.append(ga.local[s_idx - ga.offset, :])
+                s_amount[r_node] += 1
+
+            if r_node == self.node_id:
+                r_amount[s_node] += 1
+
+        sendbuf = np.asarray(rows_to_send, dtype=np.float64)
+
+        recvbuf = np.empty((r_amount.sum(), new_total_cols), dtype=np.float64)
+
+        s_offsets = self._cumsum(s_amount)*new_total_cols
+        r_offsets = self._cumsum(r_amount)*new_total_cols
+        s_amount *= new_total_cols
+        r_amount *= new_total_cols
+
+        self.comm.Alltoallv(
+            [sendbuf, s_amount, s_offsets, MPI.DOUBLE],
+            [recvbuf, r_amount, r_offsets, MPI.DOUBLE])
+
+        return recvbuf
 
 
     def __init__(self, total_rows, total_cols=None, local=None):
@@ -216,11 +257,31 @@ class GlobalArray(object):
             return self._slice_array(
                 *(self._key2slice(axis_key) for axis_key in key))
         else:
-            raise TypeError, 'Global Arrays indices must be integers or slice'
+            raise TypeError, "Global Arrays indices must be integers or slice"
 
 
-    def __setitem__(self, ):
-        pass
+    def __setitem__(self, key, value):
+        if isinstance(key, slice):
+            recvbuf = self._setslice_array(key, ga=value)
+            idxs = [idx for idx in range(*key.indices(self.total_rows)) 
+                    if self._row2nodeid(idx) == self.node_id]
+            for idx, row in zip(idxs, recvbuf):
+                self.local[idx - self.offset] = row
+
+        elif isinstance(key, (int, np.integer)):
+            recvbuf = self._setslice_array(self._key2slice(key), ga=value)
+            if self._row2nodeid(key) == self.node_id:
+                self.local[key - self.offset] = recvbuf
+
+        elif isinstance(key, tuple):
+            key = [self._key2slice(axis_key) for axis_key in key]
+            recvbuf = self._setslice_array(*key, ga=value)
+            idxs = [idx for idx in range(*key[0].indices(self.total_rows)) 
+                    if self._row2nodeid(idx) == self.node_id]
+            for idx, row in zip(idxs, recvbuf):
+                self.local[idx-self.offset, key[1]] = row
+        else:
+            raise TypeError, "Global Arrays indices must be integers or slice"
 
 
     def __eq__(self, other):  # Total-wise

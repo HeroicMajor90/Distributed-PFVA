@@ -9,13 +9,14 @@ def im_root():
 if im_root(): print("TEST: Sort by First Column")
 shape = np.empty(2, dtype=np.int32)
 for i in range(1000):
-    shape[:] = np.random.randint(1, 10, 2, np.int32)
+    shape[:] = np.random.randint(1, 7, 2, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
     A_ga = GlobalArray.array(A)
     SA_ga = GlobalArray.array(A[A[:, 0].argsort()])
     if sort_by_first_column(A_ga) != SA_ga:
+        SA_ga.disp()
         sort_by_first_column(A_ga).disp()
         raise Exception("FAIL")
     elif im_root():

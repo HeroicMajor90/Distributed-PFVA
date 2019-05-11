@@ -568,7 +568,7 @@ def sort_by_first_column(A):
             local_idx = 0
             other_idx = 0
             while local_idx < local.shape[0] and other_idx < other.shape[0]:
-                if local[local_idx, 0] > other[other_idx, 0]:
+                if local[local_idx, 0] < other[other_idx, 0]:
                     new_local[local_idx + other_idx] = local[local_idx]
                     local_idx += 1
                 else:

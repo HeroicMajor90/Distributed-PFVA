@@ -408,7 +408,7 @@ class GlobalArray(object):
                     # Set Max Pivot
                     if self.node_id < current_pivot_node or self.rows < 1:
                         # Node is irrelevant if above pivot
-                        senddata = np.array([0, self.node_id],dtype=np.float64)
+                        senddata = np.array([0, self.node_id], dtype=np.float64)
                     elif self.node_id == current_pivot_node:  
                         # If node is pivot_node
                         a = np.abs(self.local[pivot_coords[0]:self.rows,
@@ -424,9 +424,9 @@ class GlobalArray(object):
                         raise Exception("MPI rank error")
 
                     recvdata = np.empty(2 * self.nodes)
-                    self.comm.Allgather(senddata,recvdata)
+                    self.comm.Allgather(senddata, recvdata)
                     maxnode = np.argmax(recvdata[0::2])
-                    maxnode = recvdata[maxnode*2+1]
+                    maxnode = recvdata[maxnode * 2 + 1]
 
                     if current_pivot_node == maxnode:  # If exchange is local
                         if (self.node_id == maxnode and
@@ -487,8 +487,8 @@ class GlobalArray(object):
                 # Repeat for each local row under pivot
                 c = (self.local[:pivot_coords[0], current_column] /
                      reduction_row[current_column])
-                c = c.reshape(-1,1)
-                pivot_row = np.tile(reduction_row,(c.size,1))
+                c = c.reshape(-1, 1)
+                pivot_row = np.tile(reduction_row, (c.size, 1))
                 self.local[:pivot_coords[0], :] -= (pivot_row * c)
 
                 self.local[pivot_coords[0], :] /= self.local[pivot_coords[0],

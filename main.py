@@ -3,7 +3,10 @@ from global_array import GlobalArray, sort_by_first_column
 import numpy as np
 from mpi4py import MPI
 
-print("TEST: Sort by First Column")
+def im_root():
+    return MPI.COMM_WORLD.Get_rank() == 0
+
+if im_root(): print("TEST: Sort by First Column")
 shape = np.empty(2, dtype=np.int32)
 for i in range(1000):
     shape[:] = np.random.randint(1, 10, 2, np.int32)
@@ -15,10 +18,10 @@ for i in range(1000):
     if sort_by_first_column(A_ga) != SA_ga:
         sort_by_first_column(A_ga).disp()
         raise Exception("FAIL")
-    elif MPI.COMM_WORLD.Get_rank() == 0:
+    elif im_root():
         print(i)
 
-print("TEST: Matrix slice assignment")
+if im_root(): print("TEST: Matrix slice assignment")
 shape = np.empty(2, dtype=np.int32)
 for i in range(1000):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
@@ -61,10 +64,10 @@ for i in range(1000):
         AS_ga.disp()
         A_ga.disp()
         raise Exception("FAIL")
-    elif MPI.COMM_WORLD.Get_rank() == 0:
+    elif im_root():
         print(i)
 
-print("TEST: Matrix Std: Column Wise")
+if im_root(): print("TEST: Matrix Std: Column Wise")
 shape = np.empty(2, dtype=np.int32)
 for i in range(1000):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
@@ -79,10 +82,10 @@ for i in range(1000):
     if C_ga != AS_ga:
         (C_ga - AS_ga).disp()
         raise Exception("FAIL")
-    elif MPI.COMM_WORLD.Get_rank() == 0:
+    elif im_root():
         print(i)
 
-print("TEST: Matrix Std: Row Wise")
+if im_root(): print("TEST: Matrix Std: Row Wise")
 shape = np.empty(2, dtype=np.int32)
 for i in range(1000):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
@@ -97,10 +100,10 @@ for i in range(1000):
     if C_ga != AS_ga:
         (C_ga - AS_ga).disp()
         raise Exception("FAIL")
-    elif MPI.COMM_WORLD.Get_rank() == 0:
+    elif im_root():
         print(i)
 
-print("TEST: Matrix Std: Flat")
+if im_root(): print("TEST: Matrix Std: Flat")
 shape = np.empty(2, dtype=np.int32)
 for i in range(1000):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
@@ -113,13 +116,13 @@ for i in range(1000):
     C_ga = GlobalArray.array(C)
     AS_ga = A_ga.std()
     if C_ga != AS_ga:
-    	C_ga.disp()
+        C_ga.disp()
         (C_ga - AS_ga).disp()
         raise Exception("FAIL")
-    elif MPI.COMM_WORLD.Get_rank() == 0:
+    elif im_root():
         print(i)
 
-print("TEST: Matrix Average: Column Wise")
+if im_root(): print("TEST: Matrix Average: Column Wise")
 shape = np.empty(2, dtype=np.int32)
 for i in range(1000):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
@@ -134,10 +137,10 @@ for i in range(1000):
     if C_ga != AM_ga:
         (C_ga - AM_ga).disp()
         raise Exception("FAIL")
-    elif MPI.COMM_WORLD.Get_rank() == 0:
+    elif im_root():
         print(i)
 
-print("TEST: Matrix Average: Row Wise")
+if im_root(): print("TEST: Matrix Average: Row Wise")
 for i in range(1000):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
@@ -151,10 +154,10 @@ for i in range(1000):
     if C_ga != AM_ga:
         (C_ga - AM_ga).disp()
         raise Exception("FAIL")
-    elif MPI.COMM_WORLD.Get_rank() == 0:
+    elif im_root():
         print(i)
 
-print("TEST: Matrix Average: Flat")
+if im_root(): print("TEST: Matrix Average: Flat")
 for i in range(1000):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
@@ -168,10 +171,10 @@ for i in range(1000):
     if C_ga != AM_ga:
         (C_ga - AM_ga).disp()
         raise Exception("FAIL")
-    elif MPI.COMM_WORLD.Get_rank() == 0:
+    elif im_root():
         print(i)
 
-print("TEST: NP-2-GA-2-NP")
+if im_root(): print("TEST: NP-2-GA-2-NP")
 shape = np.empty(2, dtype=np.int32)
 for i in range(1000):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
@@ -183,10 +186,10 @@ for i in range(1000):
         A_ga.disp()
         GlobalArray.array(A_ga.to_np()).disp()
         raise Exception("FAIL")
-    elif MPI.COMM_WORLD.Get_rank() == 0:
+    elif im_root():
         print(i)
 
-print("TEST: Matrix slicing")
+if im_root(): print("TEST: Matrix slicing")
 shape = np.empty(2, dtype=np.int32)
 for i in range(1000):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
@@ -221,11 +224,11 @@ for i in range(1000):
         AS_ga.disp()
         Sliced_Array.disp()
         raise Exception("FAIL")
-    elif MPI.COMM_WORLD.Get_rank() == 0:
+    elif im_root():
         print(i)
 
 
-print("TEST: Matrix indexing")
+if im_root(): print("TEST: Matrix indexing")
 shape = np.empty(2, dtype=np.int32)
 for i in range(1000):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
@@ -246,11 +249,11 @@ for i in range(1000):
         AS_ga.disp()
         Indexed_Array.disp()
         raise Exception("FAIL")
-    elif MPI.COMM_WORLD.Get_rank() == 0:
+    elif im_root():
         print(i)
 
 
-print("TEST: Matrix row slicing")
+if im_root(): print("TEST: Matrix row slicing")
 shape = np.empty(2, dtype=np.int32)
 for i in range(1000):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
@@ -274,11 +277,11 @@ for i in range(1000):
         AS_ga.disp()
         Sliced_Array.disp()
         raise Exception("FAIL")
-    elif MPI.COMM_WORLD.Get_rank() == 0:
+    elif im_root():
         print(i)
 
 
-print("TEST: Matrix Transpose")
+if im_root(): print("TEST: Matrix Transpose")
 shape = np.empty(2, dtype=np.int32)
 for i in range(1000):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
@@ -293,10 +296,10 @@ for i in range(1000):
         AT_ga.disp()
         A_ga.transpose().disp()
         raise Exception("FAIL")
-    elif MPI.COMM_WORLD.Get_rank() == 0:
+    elif im_root():
         print(i)
 
-print("TEST: Matrix RREF")
+if im_root(): print("TEST: Matrix RREF")
 shape = np.empty(1, dtype=np.int32)
 for i in range(1000):
     shape[:] = np.random.randint(1, 10, 1, np.int32)
@@ -316,10 +319,10 @@ for i in range(1000):
     if Ainv_ga != X_ga:
         X_ga.disp()
         raise Exception("FAIL")
-    elif MPI.COMM_WORLD.Get_rank() == 0:
+    elif im_root():
         print(i)
 
-print("TEST: Matrix Multiplication")
+if im_root(): print("TEST: Matrix Multiplication")
 shape = np.empty(3, dtype=np.int32)
 for i in range(1000):
     shape[:] = np.random.randint(1, 1000, 3, np.int32)
@@ -335,5 +338,5 @@ for i in range(1000):
     if C_ga != A_ga.dot(B_ga):
         (C_ga - A_ga.dot(B_ga)).disp()
         raise Exception("FAIL")
-    elif MPI.COMM_WORLD.Get_rank() == 0:
+    elif im_root():
         print(i)

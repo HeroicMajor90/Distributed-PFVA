@@ -577,11 +577,11 @@ def sort_by_first_column(A):
             while local_idx < local.shape[0]:
                 new_local[local_idx + other_idx] = local[local_idx]
                 local_idx += 1
-            while local_idx < local.shape[0]:
+            while other_idx < other.shape[0]:
                 new_local[local_idx + other_idx] = other[other_idx]
                 other_idx += 1
             local = new_local
-            d *= 2
+        d *= 2
     sorted_array = (local if A.node_id == 0
                     else np.empty((A.total_rows, A.total_cols), np.float64))
     A.comm.Bcast(sorted_array)

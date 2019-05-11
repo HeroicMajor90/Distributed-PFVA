@@ -342,51 +342,52 @@ class GlobalArray(object):
         #      =    0 is column wise
         #      =    1 is row wise
         if axis == 0:
-            colMean = GlobalArray(self.total_cols,1)
-            localSum = np.sum(self.local,axis=0)
-            globalSum = np.empty(self.total_cols, np.float64)
-            self.comm.Allreduce(localSum,globalSum,op=MPI.SUM)
-            meanVec = globalSum/self.total_rows
-            for col in range(colMean.rows):
-                colMean.local[col, 0] = meanVec[col+colMean.offset]
-            return colMean
+            col_mean = GlobalArray(self.total_cols,1)
+            local_sum = np.sum(self.local,axis=0)
+            global_sum = np.empty(self.total_cols,np.float64)
+            self.comm.Allreduce(local_sum,global_sum,op=MPI.SUM)
+            meanVec = global_sum / self.total_rows
+            for col in range(col_mean.rows):
+                col_mean.local[col, 0] = meanVec[col+col_mean.offset]
+            return col_mean
         else:
-            rowMean = GlobalArray(self.total_rows,1)
-            rowMean.local[:,0] = np.mean(self.local,axis=1)
+            row_mean = GlobalArray(self.total_rows,1)
+            row_mean.local[:, 0] = np.mean(self.local,axis=1)
             if axis == 1:
-                return rowMean
+                return row_mean
             else:
-                return rowMean.mean(axis=0)
+                return row_mean.mean(axis=0)
 
 
     def std(self,axis=None,ddof=0,zero_default=0):
         if axis == 1:
-            rowStd = GlobalArray(self.total_rows,1)
-            rowStd.local[:,0] = np.std(self.local,axis=1,ddof=ddof)
-            rowStd.local = np.where(rowStd.local == 0,zero_default,rowStd.local)
-            return rowStd
+            row_std = GlobalArray(self.total_rows,1)
+            row_std.local[:, 0] = np.std(self.local,axis=1,ddof=ddof)
+            row_std.local = np.where(row_std.local == 0,zero_default,
+                row_std.local)
+            return row_std
         else:
-            colMean = self.mean(axis)
-            colMean = colMean.to_np()
-            globalSum = np.empty(self.total_cols, np.float64)
-            local_copy = (self.local - colMean.flatten())**2
+            col_mean = self.mean(axis)
+            col_mean = col_mean.to_np()
+            global_sum = np.empty(self.total_cols,np.float64)
+            local_copy = (self.local - col_mean.flatten())**2
             localSum = np.sum(local_copy,axis=0)
-            self.comm.Allreduce(localSum,globalSum,op=MPI.SUM)
+            self.comm.Allreduce(localSum,global_sum,op=MPI.SUM)
             if axis == 0:
-                colStd = GlobalArray(self.total_cols,1)
-                stdVec = np.sqrt(globalSum/(self.total_rows-ddof))
-                stdVec = np.where(stdVec == 0,zero_default,stdVec)
-                for col in range(colStd.rows):
-                    colStd.local[col, 0] = stdVec[col+colStd.offset]
-                return colStd
+                col_std = GlobalArray(self.total_cols,1)
+                std_vec = np.sqrt(global_sum / (self.total_rows-ddof))
+                std_vec = np.where(std_vec==0,zero_default,std_vec)
+                for col in range(col_std.rows):
+                    col_std.local[col, 0] = std_vec[col + col_std.offset]
+                return col_std
             else:
-                colStd = GlobalArray(1,1)
-                varis = np.sqrt(np.sum(globalSum)/
-                    (self.total_rows*self.total_cols-ddof))
-                varis = np.where(varis == 0,zero_default,varis)
+                col_std = GlobalArray(1,1)
+                varis = np.sqrt(np.sum(global_sum) /
+                    (self.total_rows * self.total_cols-ddof))
+                varis = np.where(varis==0,zero_default,varis)
                 if self.node_id == 0:
-                    colStd.local[0,0] = varis
-                return colStd
+                    col_std.local[0, 0] = varis
+                return col_std
 
 
     def rref(self):

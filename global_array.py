@@ -327,6 +327,7 @@ class GlobalArray(object):
                 res.local[row, col] = self.local[row].dot(current_col)
         return res
 
+
     def mean(self, axis=None):
         # axis =    None is average of flattened array
         #      =    0 is column wise
@@ -347,6 +348,7 @@ class GlobalArray(object):
                 return rowMean
             else:
                 return rowMean.mean(axis=0)
+
 
     def std(self,axis=None):
         if axis == 1:
@@ -372,6 +374,7 @@ class GlobalArray(object):
                 if self.node_id == 0:
                     colStd.local[0,0] = varis
                 return colStd
+
 
     def rref(self):
         eps = 1.0 / (10 ** 10)

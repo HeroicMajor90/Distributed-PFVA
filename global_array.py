@@ -350,10 +350,10 @@ class GlobalArray(object):
                 return rowMean.mean(axis=0)
 
 
-    def std(self,axis=None):
+    def std(self,axis=None,ddof=0):
         if axis == 1:
             rowStd = GlobalArray(self.total_rows,1)
-            rowStd.local[:,0] = np.std(self.local,axis=1)
+            rowStd.local[:,0] = np.std(self.local,axis=1,ddof=ddof)
             return rowStd
         else:
             colMean = self.mean(axis)
@@ -364,16 +364,18 @@ class GlobalArray(object):
             self.comm.Allreduce(localSum,globalSum,op=MPI.SUM)
             if axis == 0:
                 colStd = GlobalArray(self.total_cols,1)
-                stdVec = np.sqrt(globalSum/self.total_rows)
+                stdVec = np.sqrt(globalSum/(self.total_rows-ddof))
                 for col in range(colStd.rows):
                     colStd.local[col, 0] = stdVec[col+colStd.offset]
                 return colStd
             else:
                 colStd = GlobalArray(1,1)
-                varis = np.sqrt(np.sum(globalSum)/(self.total_rows*self.total_cols))
+                varis = np.sqrt(np.sum(globalSum)/
+                    (self.total_rows*self.total_cols-ddof))
                 if self.node_id == 0:
                     colStd.local[0,0] = varis
                 return colStd
+
 
 
     def rref(self):

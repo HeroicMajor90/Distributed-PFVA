@@ -214,7 +214,6 @@ class GlobalArray(object):
 
 
     def __mul__(self, other):
-        print "Mul"
         if isinstance(other, GlobalArray):
             other = other.to_np() if other.total_rows == 1 else other.local
         return GlobalArray(

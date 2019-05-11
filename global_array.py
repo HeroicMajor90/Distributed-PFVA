@@ -162,7 +162,7 @@ class GlobalArray(object):
         ga = cls.zeros(total_rows, total_rows)
         for row in range(ga.rows):
             ga.local[row, ga.offset + row] = 1
-        return ga.local.ndim
+        return ga
 
 
     @classmethod
@@ -214,6 +214,7 @@ class GlobalArray(object):
 
 
     def __mul__(self, other):
+        print "Mul"
         if isinstance(other, GlobalArray):
             other = other.to_np() if other.total_rows == 1 else other.local
         return GlobalArray(
@@ -221,7 +222,10 @@ class GlobalArray(object):
 
 
     def __rmul__(self, other):
-        return self * other
+        if isinstance(other, GlobalArray):
+            other = other.to_np() if other.total_rows == 1 else other.local
+        return GlobalArray(
+            self.total_rows, self.total_cols, local=other * self.local)
 
 
     def __div__(self, other):
@@ -251,6 +255,8 @@ class GlobalArray(object):
 
 
     def __setitem__(self, key, value):
+        if isinstance(value, (int, np.integer)):
+            value = GlobalArray.array(np.array([value])[np.newaxis])
         if isinstance(key, slice):
             recvbuf = self._setslice_array(key, ga=value)
             idxs = [idx for idx in range(*key.indices(self.total_rows)) 
@@ -533,8 +539,8 @@ def qr(A):
         e = GlobalArray.zeros(y.total_rows, 1)
         e[0] = 1
         sign = np.sign(y[0].to_np()) if y[0].to_np() != 0 else 1
-        w = y - sign * np.sqrt(y.transponse().dot(y).to_np()) * e
-        v = w / np.sqrt(w.transpose().dot(w).to_np())
+        w = y + float(sign) * float(np.sqrt(y.transpose().dot(y).to_np())) * e
+        v = w / float(np.sqrt(w.transpose().dot(w).to_np()))
         H = GlobalArray.eye(A.total_rows)
         H[k:, k:] = GlobalArray.eye(A.total_rows - k) - 2 * v.dot(v.transpose())
         A = H.dot(A)

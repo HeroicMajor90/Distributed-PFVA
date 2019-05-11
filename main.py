@@ -3,6 +3,58 @@ from global_array import GlobalArray
 import numpy as np
 from mpi4py import MPI
 
+print("TEST: Matrix Std: Column Wise")
+shape = np.empty(2, dtype=np.int32)
+for i in range(1000):
+    shape[:] = np.random.randint(1, 1000, 2, np.int32)
+    MPI.COMM_WORLD.Bcast(shape)
+    A = 1000 * np.random.rand(shape[0], shape[1])
+    MPI.COMM_WORLD.Bcast(A)
+    A_ga = GlobalArray.array(A)
+    C = np.std(A,axis=0)
+    C = np.reshape(C,(-1,1))
+    C_ga = GlobalArray.array(C)
+    AS_ga = A_ga.std(axis=0)
+    if C_ga != AS_ga:
+        (C_ga - AS_ga).disp()
+        raise Exception("FAIL")
+    elif MPI.COMM_WORLD.Get_rank() == 0:
+        print(i)
+print("TEST: Matrix Std: Row Wise")
+shape = np.empty(2, dtype=np.int32)
+for i in range(1000):
+    shape[:] = np.random.randint(1, 1000, 2, np.int32)
+    MPI.COMM_WORLD.Bcast(shape)
+    A = 1000 * np.random.rand(shape[0], shape[1])
+    MPI.COMM_WORLD.Bcast(A)
+    A_ga = GlobalArray.array(A)
+    C = np.std(A,axis=1)
+    C = np.reshape(C,(-1,1))
+    C_ga = GlobalArray.array(C)
+    AS_ga = A_ga.std(axis=1)
+    if C_ga != AS_ga:
+        (C_ga - AS_ga).disp()
+        raise Exception("FAIL")
+    elif MPI.COMM_WORLD.Get_rank() == 0:
+        print(i) 
+print("TEST: Matrix Std: Flat")
+shape = np.empty(2, dtype=np.int32)
+for i in range(1000):
+    shape[:] = np.random.randint(1, 1000, 2, np.int32)
+    MPI.COMM_WORLD.Bcast(shape)
+    A = 1000 * np.random.rand(shape[0], shape[1])
+    MPI.COMM_WORLD.Bcast(A)
+    A_ga = GlobalArray.array(A)
+    C = np.std(A)
+    C = np.reshape(C,(-1,1))
+    C_ga = GlobalArray.array(C)
+    C_ga.disp()
+    AS_ga = A_ga.std()
+    if C_ga != AS_ga:
+        (C_ga - AS_ga).disp()
+        raise Exception("FAIL")
+    elif MPI.COMM_WORLD.Get_rank() == 0:
+        print(i)
 print("TEST: Matrix Average: Column Wise")
 shape = np.empty(2, dtype=np.int32)
 for i in range(1000):

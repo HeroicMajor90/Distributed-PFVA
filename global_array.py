@@ -291,13 +291,40 @@ class GlobalArray(object):
             return colMean
         else:
             rowMean = GlobalArray(self.total_rows,1)
-            npMean = np.mean(self.local,axis=1)
-            for row in range(self.rows):
-                rowMean.local[row,0] = npMean[row]
+            rowMean.local[:,0] = np.mean(self.local,axis=1)
             if axis == 1:
                 return rowMean
             else:
                 return rowMean.mean(axis=0)
+
+    def std(self,axis=None):
+        if axis == 1:
+            rowStd = GlobalArray(self.total_rows,1)
+            rowStd.local[:,0] = np.std(self.local,axis=1)
+            return rowStd
+        else:
+            colMean = self.mean(axis)
+            colMean = colMean.to_np()
+            globalSum = np.empty(self.total_cols, np.float64)
+            local_copy = (self.local - colMean.flatten())**2
+            localSum = np.sum(local_copy,axis=0)
+            self.comm.Allreduce(localSum,globalSum,op=MPI.SUM)
+            if axis == 0:
+                colStd = GlobalArray(self.total_cols,1)
+                stdVec = np.sqrt(globalSum/self.total_rows)
+                for col in range(colStd.rows):
+                    colStd.local[col, 0] = stdVec[col+colStd.offset]
+                return colStd
+            else:
+                colStd = GlobalArray(1,1)
+                print(globalSum)
+                print(np.sum(globalSum))
+                print(np.sum(globalSum)/(self.total_rows*self.total_cols))
+                varis = np.sqrt(np.sum(globalSum)/(self.total_rows*self.total_cols))
+                print(varis)
+                if self.node_id == 0:
+                    colStd.local[0,0] = varis
+                return colStd
 
     def _global_to_local(self, y, x):
         for nodeloop in range(self.nodes):

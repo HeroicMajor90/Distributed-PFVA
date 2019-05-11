@@ -29,12 +29,13 @@ def read_pgm(filename, byteorder='>'):
 
 if __name__ == "__main__":
     from matplotlib import pyplot
-    ind = 1
-    out = open("../output.txt","w+")
-    out.truncate(0)
 
-    outM = np.array([], dtype=np.str).reshape(0,8+(256*256))
-    print(outM)
+    classMFile = "../classM.txt"
+    dataMFile = "../dataM.txt"
+
+    classM = np.zeros(8)
+    dataM = np.array([], dtype=np.str).reshape(0,256*256)
+    print(dataM)
     with open('../miadata.txt','r+') as f:
         for line in f:
             old = line
@@ -43,47 +44,47 @@ if __name__ == "__main__":
             noNote = re.sub(r'(\*NOTE 3\*)','', addXAfterNORM)
             remvFat = re.sub(r'(\w+(?=\s+NORM)|\w+(?=\s+CALC)|\w+(?=\s+CIRC)|\w+(?=\s+SPIC)|\w+(?=\s+MISC)|\w+(?=\s+ARCH)|\w+(?=\s+ASYM))', '', noNote)
             remExtraSpaces = re.sub(' +',' ',remvFat)
-            out.write(remExtraSpaces)
             row = np.array(map(str, remExtraSpaces.split()))
 
             p = re.compile(r'(\w+(?=\s+NORM)|\w+(?=\s+CALC)|\w+(?=\s+CIRC)|\w+(?=\s+SPIC)|\w+(?=\s+MISC)|\w+(?=\s+ARCH)|\w+(?=\s+ASYM))')
             imageName = p.search(remExtraSpaces)
             image = read_pgm('../all-mias/{}.pgm'.format(imageName.group(1)), byteorder='<')
             resized = cv2.resize(image, (256,256), interpolation = cv2.INTER_AREA)
-            flat = resized.flatten()
+            dataRow = resized.flatten()
 
-            characteristics = np.zeros(8)
-
+            classRow = np.zeros(8)
+            
             if row[1] == 'CALC':
-                characteristics[0] = 1
+                classRow[0] = 1
             elif row[1] == 'CIRC':
-                characteristics[1] = 1
+                classRow[1] = 1
             elif row[1] == 'SPIC':
-                characteristics[2] = 1
+                classRow[2] = 1
             elif row[1] == 'MISC':
-                characteristics[3] = 1
+                classRow[3] = 1
             elif row[1] == 'ARCH':
-                characteristics[4] = 1
+                classRow[4] = 1
             elif row[1] == 'ASYM':
-                characteristics[5] = 1
+                classRow[5] = 1
             elif row[1] == 'NORM':
-                characteristics[6] = 1
+                classRow[6] = 1
             else:
                 print("Parse ERROR, row[1]: " + str(row[1]))
 
 
             if row[2] == 'B':
-                characteristics[7] = 1
+                classRow[7] = 1
 
-            row = np.insert(flat, 0, characteristics)
-
-            outM = np.vstack([outM,row])
+            classM = np.vstack([classM,classRow])
+            dataM = np.vstack([dataM,dataRow])
 
             print(imageName.group(1) + " DONE")
         f.close()
 
-    np.savetxt('../matrix.txt', outM, delimiter=' ', fmt="%s") 
+    np.savetxt(classMFile, classM, delimiter=' ', fmt="%s") 
+    print("Class matrix saved in " + classMFile)
+    np.savetxt(dataMFile, dataM, delimiter=' ', fmt="%s") 
+    print("Data matrix saved in " + dataMFile)
 
-    pyplot.imshow(image, pyplot.cm.gray)
-    pyplot.show()
+    print("ALL DONE")
 

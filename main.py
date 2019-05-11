@@ -316,7 +316,7 @@ for i in range(TRIES_PER_TEST):
 if im_root(): print("TEST: Matrix RREF")
 shape = np.empty(1, dtype=np.int32)
 for i in range(TRIES_PER_TEST):
-    shape[:] = np.random.randint(1, 10, 1, np.int32)
+    shape[:] = np.random.randint(1, 1000, 1, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[0])
     MPI.COMM_WORLD.Bcast(A)

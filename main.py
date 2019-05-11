@@ -1,7 +1,22 @@
 #!/usr/bin/env python
-from global_array import GlobalArray
+from global_array import GlobalArray, sort_by_first_column
 import numpy as np
 from mpi4py import MPI
+
+print("TEST: Sort by First Column")
+shape = np.empty(2, dtype=np.int32)
+for i in range(1000):
+    shape[:] = np.random.randint(1, 10, 2, np.int32)
+    MPI.COMM_WORLD.Bcast(shape)
+    A = 1000 * np.random.rand(shape[0], shape[1])
+    MPI.COMM_WORLD.Bcast(A)
+    A_ga = GlobalArray.array(A)
+    SA_ga = GlobalArray.array(A[A[:, 0].argsort()])
+    if sort_by_first_column(A_ga) != SA_ga:
+        sort_by_first_column(A_ga).disp()
+        raise Exception("FAIL")
+    elif MPI.COMM_WORLD.Get_rank() == 0:
+        print(i)
 
 print("TEST: Matrix Std: Column Wise")
 shape = np.empty(2, dtype=np.int32)
@@ -20,6 +35,7 @@ for i in range(1000):
         raise Exception("FAIL")
     elif MPI.COMM_WORLD.Get_rank() == 0:
         print(i)
+
 print("TEST: Matrix Std: Row Wise")
 shape = np.empty(2, dtype=np.int32)
 for i in range(1000):
@@ -36,7 +52,8 @@ for i in range(1000):
         (C_ga - AS_ga).disp()
         raise Exception("FAIL")
     elif MPI.COMM_WORLD.Get_rank() == 0:
-        print(i) 
+        print(i)
+
 print("TEST: Matrix Std: Flat")
 shape = np.empty(2, dtype=np.int32)
 for i in range(1000):
@@ -55,6 +72,7 @@ for i in range(1000):
         raise Exception("FAIL")
     elif MPI.COMM_WORLD.Get_rank() == 0:
         print(i)
+
 print("TEST: Matrix Average: Column Wise")
 shape = np.empty(2, dtype=np.int32)
 for i in range(1000):
@@ -72,6 +90,7 @@ for i in range(1000):
         raise Exception("FAIL")
     elif MPI.COMM_WORLD.Get_rank() == 0:
         print(i)
+
 print("TEST: Matrix Average: Row Wise")
 for i in range(1000):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)
@@ -88,6 +107,7 @@ for i in range(1000):
         raise Exception("FAIL")
     elif MPI.COMM_WORLD.Get_rank() == 0:
         print(i)
+
 print("TEST: Matrix Average: Flat")
 for i in range(1000):
     shape[:] = np.random.randint(1, 1000, 2, np.int32)

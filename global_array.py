@@ -33,15 +33,14 @@ class GlobalArray(object):
 
 
     def _key2slice(self, key):
-        assert (isinstance(key, slice) or isinstance(key, (int, np.integer)),
-                'Keys must be slices or integers')
+        assert isinstance(key, slice) or isinstance(key, (int, np.integer))
         return key if isinstance(key, slice) else slice(key, key+1)
 
 
     def _slice_array(self, slice_axis1, slice_axis2=None):
         start, stop, step = slice_axis1.indices(self.total_rows)
         slice_axis2 = slice_axis2 if slice_axis2 else slice(self.total_cols)
-        assert step > 0, 'Negative steps are not currently supported'
+        assert step > 0, "Negative steps are not currently supported"
 
         start = start + self.total_rows if start < 0 else max(start, 0)
         stop = (stop + self.total_rows
@@ -520,6 +519,7 @@ def sort_by_first_column(A):
                 new_local[local_idx + other_idx] = other[other_idx]
                 other_idx += 1
             local = new_local
+            d *= 2
     sorted_array = (local if A.node_id == 0
                     else np.empty((A.total_rows, A.total_cols), np.float64))
     A.comm.Bcast(sorted_array)

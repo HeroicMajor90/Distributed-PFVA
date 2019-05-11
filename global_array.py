@@ -333,6 +333,7 @@ class GlobalArray(object):
                 res.local[row, col] = self.local[row].dot(current_col)
         return res
 
+
     def mean(self, axis=None):
         # axis =    None is average of flattened array
         #      =    0 is column wise
@@ -354,10 +355,12 @@ class GlobalArray(object):
             else:
                 return rowMean.mean(axis=0)
 
-    def std(self,axis=None):
+
+    def std(self,axis=None,ddof=0,zero_default=0):
         if axis == 1:
             rowStd = GlobalArray(self.total_rows,1)
-            rowStd.local[:,0] = np.std(self.local,axis=1)
+            rowStd.local[:,0] = np.std(self.local,axis=1,ddof=ddof)
+            rowStd.local = np.where(rowStd.local == 0,zero_default,rowStd.local)
             return rowStd
         else:
             colMean = self.mean(axis)
@@ -368,36 +371,20 @@ class GlobalArray(object):
             self.comm.Allreduce(localSum,globalSum,op=MPI.SUM)
             if axis == 0:
                 colStd = GlobalArray(self.total_cols,1)
-                stdVec = np.sqrt(globalSum/self.total_rows)
+                stdVec = np.sqrt(globalSum/(self.total_rows-ddof))
+                stdVec = np.where(stdVec == 0,zero_default,stdVec)
                 for col in range(colStd.rows):
                     colStd.local[col, 0] = stdVec[col+colStd.offset]
                 return colStd
             else:
                 colStd = GlobalArray(1,1)
-                print(globalSum)
-                print(np.sum(globalSum))
-                print(np.sum(globalSum)/(self.total_rows*self.total_cols))
-                varis = np.sqrt(np.sum(globalSum)/(self.total_rows*self.total_cols))
-                print(varis)
+                varis = np.sqrt(np.sum(globalSum)/
+                    (self.total_rows*self.total_cols-ddof))
+                varis = np.where(varis == 0,zero_default,varis)
                 if self.node_id == 0:
                     colStd.local[0,0] = varis
                 return colStd
 
-    def _global_to_local(self, y, x):
-        for nodeloop in range(self.nodes):
-            low_bound = ((self.total_rows / self.nodes * nodeloop) +
-                         min(nodeloop, self.total_rows % self.nodes))
-            high_bound = low_bound + self.total_rows / self.nodes + \
-                         (nodeloop < self.total_rows % self.nodes)
-            if (low_bound <= y and high_bound > y):
-                node = nodeloop
-                loc_y = y - low_bound
-                loc_x = x
-                return node, [loc_y, loc_x]
-        raise Exception("y value: "
-                        + str(y)
-                        + " out of bounds, higher than or eq to"
-                        + str(self.total_rows))
 
 
     def rref(self):
@@ -407,9 +394,9 @@ class GlobalArray(object):
         for current_column in range(min(self.total_rows, self.total_cols)):
             mem = np.zeros(self.total_cols)
 
-            current_pivot_node, pivotCoords = self._global_to_local(
-                current_column, current_column)
-
+            current_pivot_node = self._row2nodeid(current_column)
+            localRow = self._get_offsets_per_node(self.total_rows,self.nodes)
+            pivotCoords = [current_column-localRow[current_pivot_node],current_column]
             ############# SET MAX PIVOT START ###############
             if self.node_id < current_pivot_node or self.rows < 1:
                 # Node is irrelevant if above pivot
@@ -501,8 +488,10 @@ class GlobalArray(object):
         ############# BACK SUBSTIUTION START ###############
         for current_column in range(
                 min(self.total_rows, self.total_cols) - 1, -1, -1):
-            current_pivot_node, pivotCoords = self._global_to_local(
-                current_column, current_column)
+            
+            current_pivot_node = self._row2nodeid(current_column)
+            localRow = self._get_offsets_per_node(self.total_rows,self.nodes)
+            pivotCoords = [current_column-localRow[current_pivot_node],current_column]
 
             reduction_row = np.empty(self.total_cols,dtype=np.float64)
 
@@ -566,7 +555,7 @@ def sort_by_first_column(A):
             local_idx = 0
             other_idx = 0
             while local_idx < local.shape[0] and other_idx < other.shape[0]:
-                if local[local_idx, 0] > other[other_idx, 0]:
+                if local[local_idx, 0] < other[other_idx, 0]:
                     new_local[local_idx + other_idx] = local[local_idx]
                     local_idx += 1
                 else:

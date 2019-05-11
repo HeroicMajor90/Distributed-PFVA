@@ -397,13 +397,13 @@ class GlobalArray(object):
         for current_column in range(maxcol):
             mem = np.zeros(self.total_cols)
             current_pivot_node = self._row2nodeid(current_column)
-            localRow = self._get_offsets_per_node(self.total_rows,self.nodes)
-            pivotCoords = [current_column - localRow[current_pivot_node],
-                           current_column]
+            local_row = self._get_offsets_per_node(self.total_rows, self.nodes)
+            pivot_coords = [current_column - local_row[current_pivot_node],
+                            current_column]
 
             # Check Singular
             if self.node_id == current_pivot_node:  # Check if singular
-                if np.abs(self.local[pivotCoords[0], pivotCoords[1]]) <= eps:
+                if np.abs(self.local[pivot_coords[0], pivot_coords[1]]) <= eps:
                     
                     # Set Max Pivot
                     if self.node_id < current_pivot_node or self.rows < 1:
@@ -411,9 +411,9 @@ class GlobalArray(object):
                         senddata = np.array([0, self.node_id],dtype=np.float64)
                     elif self.node_id == current_pivot_node:  
                         # If node is pivot_node
-                        a = np.abs(self.local[pivotCoords[0]:self.rows,
+                        a = np.abs(self.local[pivot_coords[0]:self.rows,
                                               current_column])
-                        maxind = np.argmax(a) + pivotCoords[0]
+                        maxind = np.argmax(a) + pivot_coords[0]
                         senddata = np.array([np.amax(a), self.node_id])
                     elif self.node_id > current_pivot_node:
                         # If node is under pivot_node
@@ -429,25 +429,26 @@ class GlobalArray(object):
                     maxnode = recvdata[maxnode*2+1]
 
                     if current_pivot_node == maxnode:  # If exchange is local
-                        if self.node_id == maxnode and pivotCoords[0] != maxind:
-                            self.local[[maxind, pivotCoords[0]], :] = (
-                                self.local[[pivotCoords[0], maxind], :])
+                        if (self.node_id == maxnode and
+                                pivot_coords[0] != maxind):
+                            self.local[[maxind, pivot_coords[0]], :] = (
+                                self.local[[pivot_coords[0], maxind], :])
                     else:  # If exchange is between nodes
                         if self.node_id == maxnode:  # If, maxrow node
                             sendrow = self.local[maxind, :]
 
                             self.comm.Sendrecv(
-                                sendrow, dest=current_pivot_node, recvbuf=mem,
-                                source=current_pivot_node)
+                                sendrow, dest=current_pivot_node,
+                                recvbuf=mem, source=current_pivot_node)
 
                             self.local[maxind, :] = mem
                         if self.node_id == current_pivot_node: 
                             # If, pivot node
-                            sendrow = self.local[pivotCoords[0], :]
+                            sendrow = self.local[pivot_coords[0], :]
                             self.comm.Sendrecv(sendrow, dest=maxnode,
                                                recvbuf=mem, source=maxnode)
-                            self.local[pivotCoords[0], :] = mem
-                if np.abs(self.local[pivotCoords[0], pivotCoords[1]]) <= eps:
+                            self.local[pivot_coords[0], :] = mem
+                if np.abs(self.local[pivot_coords[0], pivot_coords[1]]) <= eps:
                     print("SINGULAR")
                     error = np.array([True])
             self.comm.Bcast(error, root=current_pivot_node)
@@ -458,39 +459,40 @@ class GlobalArray(object):
             reduction_row = np.empty(self.total_cols,dtype=np.float64)
 
             if self.node_id == current_pivot_node:
-                reduction_row = self.local[pivotCoords[0], :] 
+                reduction_row = self.local[pivot_coords[0], :]
 
             self.comm.Bcast(reduction_row, root=current_pivot_node)
 
             if self.node_id == current_pivot_node:
                 # If there is local elimination to be done
-                if pivotCoords[0] != self.rows:
+                if pivot_coords[0] != self.rows:
                     # Repeat for each local row under pivot
-                    c = (self.local[pivotCoords[0] + 1:self.rows,
+                    c = (self.local[pivot_coords[0] + 1:self.rows,
                                     current_column] /
                          reduction_row[current_column])
-                    c = c.reshape(-1,1)
+                    c = c.reshape(-1, 1)
                     pivot_row = np.tile(reduction_row,(c.size,1))
-                    self.local[pivotCoords[0]+1:self.rows, :] -= (pivot_row * c)
+                    self.local[pivot_coords[0] + 1:self.rows, :] -= (
+                            pivot_row * c)
 
             if self.node_id > current_pivot_node:
-                c = self.local[:self.rows,current_column]\
-                                                /reduction_row[current_column]
-                c = c.reshape(-1,1)
+                c = (self.local[:self.rows, current_column] /
+                     reduction_row[current_column])
+                c = c.reshape(-1, 1)
                 pivot_row = np.tile(reduction_row,(c.size, 1))
                 self.local[:self.rows, :] -= (pivot_row * c)
 
             # Back Substitution
             if self.node_id == current_pivot_node:
                 # Repeat for each local row under pivot
-                c = (self.local[:pivotCoords[0], current_column] /
+                c = (self.local[:pivot_coords[0], current_column] /
                      reduction_row[current_column])
                 c = c.reshape(-1,1)
                 pivot_row = np.tile(reduction_row,(c.size,1))
-                self.local[:pivotCoords[0],:] -= (pivot_row * c)
+                self.local[:pivot_coords[0], :] -= (pivot_row * c)
 
-                self.local[pivotCoords[0], :] /= self.local[pivotCoords[0],
-                                                            pivotCoords[1]]
+                self.local[pivot_coords[0], :] /= self.local[pivot_coords[0],
+                                                             pivot_coords[1]]
 
             if self.node_id < current_pivot_node:
                 c = (self.local[:self.rows,current_column] /

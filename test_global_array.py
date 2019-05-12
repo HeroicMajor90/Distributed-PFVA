@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from global_array import GlobalArray, sort_by_first_column, qr
+import global_array as ga
 import numpy as np
 from mpi4py import MPI
 
@@ -17,11 +17,11 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
-    A_ga = GlobalArray.array(A)
+    A_ga = ga.GlobalArray.array(A)
 
-    Q_ga, R_ga = qr(A_ga)
+    Q_ga, R_ga = ga.qr(A_ga)
     Q_trans_ga = Q_ga.transpose()
-    Eye_ga = GlobalArray.eye(shape[0])
+    Eye_ga = ga.GlobalArray.eye(shape[0])
     if (Q_ga.dot(R_ga) != A_ga or
             Q_ga.dot(Q_trans_ga) != Eye_ga or
             Q_trans_ga.dot(Q_ga) != Eye_ga):
@@ -41,11 +41,11 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
-    A_ga = GlobalArray.array(A)
-    SA_ga = GlobalArray.array(A[A[:, 0].argsort()])
-    if sort_by_first_column(A_ga) != SA_ga:
+    A_ga = ga.GlobalArray.array(A)
+    SA_ga = ga.GlobalArray.array(A[A[:, 0].argsort()])
+    if ga.sort_by_first_column(A_ga) != SA_ga:
         SA_ga.disp()
-        sort_by_first_column(A_ga).disp()
+        ga.sort_by_first_column(A_ga).disp()
         raise Exception("FAIL")
     elif im_root():
         print(i)
@@ -58,7 +58,7 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
-    A_ga = GlobalArray.array(A)
+    A_ga = ga.GlobalArray.array(A)
 
     start = np.random.randint(0, shape[0], 1, np.int32)[0]
     stop = np.random.randint(start, max(start + 1, shape[0]), 1, np.int32)[0]
@@ -88,7 +88,7 @@ for i in range(TRIES_PER_TEST):
     A[start+offset:stop+offset:step, start1+offset1:stop1+offset1:step1] = (
     	A[start:stop:step, start1:stop1:step1])
 
-    AS_ga = GlobalArray.array(A)
+    AS_ga = ga.GlobalArray.array(A)
 
     if A_ga != AS_ga:
         AS_ga.disp()
@@ -105,10 +105,10 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
-    A_ga = GlobalArray.array(A)
+    A_ga = ga.GlobalArray.array(A)
     C = np.std(A,axis=0)
     C = np.reshape(C,(-1,1))
-    C_ga = GlobalArray.array(C)
+    C_ga = ga.GlobalArray.array(C)
     AS_ga = A_ga.std(axis=0)
     if C_ga != AS_ga:
         (C_ga - AS_ga).disp()
@@ -124,10 +124,10 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
-    A_ga = GlobalArray.array(A)
+    A_ga = ga.GlobalArray.array(A)
     C = np.std(A,axis=1)
     C = np.reshape(C,(-1,1))
-    C_ga = GlobalArray.array(C)
+    C_ga = ga.GlobalArray.array(C)
     AS_ga = A_ga.std(axis=1)
     if C_ga != AS_ga:
         (C_ga - AS_ga).disp()
@@ -143,10 +143,10 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
-    A_ga = GlobalArray.array(A)
+    A_ga = ga.GlobalArray.array(A)
     C = np.std(A)
     C = np.reshape(C,(-1,1))
-    C_ga = GlobalArray.array(C)
+    C_ga = ga.GlobalArray.array(C)
     AS_ga = A_ga.std()
     if C_ga != AS_ga:
         C_ga.disp()
@@ -162,10 +162,10 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
-    A_ga = GlobalArray.array(A)
+    A_ga = ga.GlobalArray.array(A)
     C = np.sum(A,axis=0)
     C = np.reshape(C,(-1,1))
-    C_ga = GlobalArray.array(C)
+    C_ga = ga.GlobalArray.array(C)
     AS_ga = A_ga.sum(axis=0)
     if C_ga != AS_ga:
         (C_ga - AS_ga).disp()
@@ -180,10 +180,10 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
-    A_ga = GlobalArray.array(A)
+    A_ga = ga.GlobalArray.array(A)
     C = np.sum(A,axis=1)
     C = np.reshape(C,(-1,1))
-    C_ga = GlobalArray.array(C)
+    C_ga = ga.GlobalArray.array(C)
     AS_ga = A_ga.sum(axis=1)
     if C_ga != AS_ga:
         (C_ga - AS_ga).disp()
@@ -198,10 +198,10 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
-    A_ga = GlobalArray.array(A)
+    A_ga = ga.GlobalArray.array(A)
     C = np.sum(A,axis=None)
     C = np.reshape(C,(-1,1))
-    C_ga = GlobalArray.array(C)
+    C_ga = ga.GlobalArray.array(C)
     AS_ga = A_ga.sum(axis=None)
     if C_ga != AS_ga:
         (C_ga - AS_ga).disp()
@@ -216,10 +216,10 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
-    A_ga = GlobalArray.array(A)
+    A_ga = ga.GlobalArray.array(A)
     C = np.mean(A,axis=0)
     C = np.reshape(C,(-1,1))
-    C_ga = GlobalArray.array(C)
+    C_ga = ga.GlobalArray.array(C)
     AM_ga = A_ga.mean(axis=0)
     if C_ga != AM_ga:
         (C_ga - AM_ga).disp()
@@ -234,10 +234,10 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
-    A_ga = GlobalArray.array(A)
+    A_ga = ga.GlobalArray.array(A)
     C = np.mean(A,axis=1)
     C = np.reshape(C,(-1,1))
-    C_ga = GlobalArray.array(C)
+    C_ga = ga.GlobalArray.array(C)
     AM_ga = A_ga.mean(axis=1)
     if C_ga != AM_ga:
         (C_ga - AM_ga).disp()
@@ -252,10 +252,10 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
-    A_ga = GlobalArray.array(A)
+    A_ga = ga.GlobalArray.array(A)
     C = np.mean(A,axis=None)
     C = np.reshape(C,(-1,1))
-    C_ga = GlobalArray.array(C)
+    C_ga = ga.GlobalArray.array(C)
     AM_ga = A_ga.mean(axis=None)
     if C_ga != AM_ga:
         (C_ga - AM_ga).disp()
@@ -271,10 +271,10 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
-    A_ga = GlobalArray.array(A)
+    A_ga = ga.GlobalArray.array(A)
     if not np.allclose(A, A_ga.to_np()):
         A_ga.disp()
-        GlobalArray.array(A_ga.to_np()).disp()
+        ga.GlobalArray.array(A_ga.to_np()).disp()
         raise Exception("FAIL")
     elif im_root():
         print(i)
@@ -287,7 +287,7 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
-    A_ga = GlobalArray.array(A)
+    A_ga = ga.GlobalArray.array(A)
 
     start = np.random.randint(0, shape[0], 1, np.int32)[0]
     stop = np.random.randint(start, max(start + 1, shape[0]), 1, np.int32)[0]
@@ -307,7 +307,7 @@ for i in range(TRIES_PER_TEST):
 
     AS = A[start:stop:step, start1:stop1:step1]
 
-    AS_ga = GlobalArray.array(A[start:stop:step, start1:stop1:step1])
+    AS_ga = ga.GlobalArray.array(A[start:stop:step, start1:stop1:step1])
 
     Sliced_Array = A_ga[start:stop:step, start1:stop1:step1]
 
@@ -326,13 +326,13 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
-    A_ga = GlobalArray.array(A)
+    A_ga = ga.GlobalArray.array(A)
 
     index = np.random.randint(0, shape[0], 1, np.int32)[0]
 
     index = MPI.COMM_WORLD.bcast(index, root=0)
 
-    AS_ga = GlobalArray.array(A[index][np.newaxis])
+    AS_ga = ga.GlobalArray.array(A[index][np.newaxis])
 
     Indexed_Array = A_ga[index]
 
@@ -351,7 +351,7 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
-    A_ga = GlobalArray.array(A)
+    A_ga = ga.GlobalArray.array(A)
 
     start = np.random.randint(0, shape[0], 1, np.int32)[0]
     stop = np.random.randint(start, max(start + 1, shape[0]), 1, np.int32)[0]
@@ -361,7 +361,7 @@ for i in range(TRIES_PER_TEST):
     stop = MPI.COMM_WORLD.bcast(stop)
     step = MPI.COMM_WORLD.bcast(step)
 
-    AS_ga = GlobalArray.array(A[start:stop:step])
+    AS_ga = ga.GlobalArray.array(A[start:stop:step])
     Sliced_Array = A_ga[start:stop:step]
 
     if Sliced_Array != AS_ga:
@@ -379,8 +379,8 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(shape)
     A = 1000 * np.random.rand(shape[0], shape[1])
     MPI.COMM_WORLD.Bcast(A)
-    A_ga = GlobalArray.array(A)
-    AT_ga = GlobalArray.array(A.transpose())
+    A_ga = ga.GlobalArray.array(A)
+    AT_ga = ga.GlobalArray.array(A.transpose())
 
     if A_ga.transpose() != AT_ga:
         A_ga.disp()
@@ -403,11 +403,11 @@ for i in range(TRIES_PER_TEST):
     B = np.eye(shape[0])
 
     X = np.concatenate((A, B), axis=1)
-    X_ga = GlobalArray.array(X)
+    X_ga = ga.GlobalArray.array(X)
     X_ga.rref()
 
     Ainv = np.linalg.inv(A)
-    Ainv_ga = GlobalArray.array(np.concatenate((B, Ainv), axis=1))
+    Ainv_ga = ga.GlobalArray.array(np.concatenate((B, Ainv), axis=1))
     if Ainv_ga != X_ga:
         X_ga.disp()
         raise Exception("FAIL")
@@ -424,10 +424,10 @@ for i in range(TRIES_PER_TEST):
     B = 1000 * np.random.rand(shape[1], shape[2])
     MPI.COMM_WORLD.Bcast(A)
     MPI.COMM_WORLD.Bcast(B)
-    A_ga = GlobalArray.array(A)
-    B_ga = GlobalArray.array(B)
+    A_ga = ga.GlobalArray.array(A)
+    B_ga = ga.GlobalArray.array(B)
     C = A.dot(B)
-    C_ga = GlobalArray.array(C)
+    C_ga = ga.GlobalArray.array(C)
     if C_ga != A_ga.dot(B_ga):
         (C_ga - A_ga.dot(B_ga)).disp()
         raise Exception("FAIL")

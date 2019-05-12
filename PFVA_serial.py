@@ -4,7 +4,7 @@ import sys
 import matplotlib.pyplot as plt
 
 PROBABILITY_WINDOW_SIZE = 21  # Must be odd
-F_INDEX = 1
+F_INDEX = 0
 FIT_DEGREE = 5
 
 CATEGORIES = [
@@ -46,7 +46,7 @@ def normalize(X):
 def PCA(X):
     sigma = X.T.dot(X)
     S = np.identity(sigma.shape[0])
-    for _ in xrange(40):
+    for _ in range(40):
         Q, R = np.linalg.qr(sigma, mode="complete")
         sigma = R.dot(Q)
         S = S.dot(Q)
@@ -83,6 +83,11 @@ def poly_fit(x, y, degree):
     return np.linalg.inv(X.transpose().dot(X)).dot(X.transpose()).dot(y)
 
 
+def get_precision(f, cat_data, alpha):
+    return float(np.mean(
+        (linearize(f, degree=FIT_DEGREE).dot(alpha) > 0.5) == cat_data))
+
+
 def main():
     X = np.loadtxt("dataM.txt")
     X = normalize(X)
@@ -101,8 +106,9 @@ def main():
                                              PROBABILITY_WINDOW_SIZE)
     offset = int(PROBABILITY_WINDOW_SIZE / 2)
     trunc_f = f_cat_data[offset:f_cat_data.shape[0] - offset, 0]
-    alfa = poly_fit(trunc_f, prob_dist, degree=FIT_DEGREE)
-    estimated_prob_dist = linearize(trunc_f, degree=FIT_DEGREE).dot(alfa)
+    alpha = poly_fit(trunc_f, prob_dist, degree=FIT_DEGREE)
+    estimated_prob_dist = linearize(trunc_f, degree=FIT_DEGREE).dot(alpha)
+    print("Model Precision: %f" % get_precision(F[:, F_INDEX], cat_data, alpha))
 
     plt.plot(trunc_f, prob_dist)
     plt.plot(trunc_f, estimated_prob_dist)

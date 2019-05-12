@@ -6,6 +6,7 @@ from mpi4py import MPI
 
 TRIES_PER_TEST = 100
 
+
 def im_root():
     return MPI.COMM_WORLD.Get_rank() == 0
 
@@ -427,7 +428,7 @@ for i in range(TRIES_PER_TEST):
         print(i)
 
 
-if im_root(): print("TEST: Matrix RREF")
+if im_root(): print("TEST: Inv")
 shape = np.empty(1, dtype=np.int32)
 for i in range(TRIES_PER_TEST):
     shape[:] = np.random.randint(1, 100, 1, np.int32)
@@ -436,16 +437,11 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(A)
     if np.linalg.det(A) == 0:
         continue  # Skip for now
-    B = np.eye(shape[0])
+    Ainv_ga = ga.inv(ga.GlobalArray.array(A))
 
-    X = np.concatenate((A, B), axis=1)
-    X_ga = ga.GlobalArray.array(X)
-    X_ga.rref()
-
-    Ainv = np.linalg.inv(A)
-    Ainv_ga = ga.GlobalArray.array(np.concatenate((B, Ainv), axis=1))
-    if Ainv_ga != X_ga:
-        X_ga.disp()
+    Ainv = ga.GlobalArray.array(np.linalg.inv(A))
+    if Ainv_ga != Ainv:
+        Ainv_ga.disp()
         raise Exception("FAIL")
     elif im_root():
         print(i)

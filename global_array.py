@@ -243,6 +243,13 @@ class GlobalArray(object):
             self.total_rows, self.total_cols, local=other / self.local)
 
 
+    def __pow__(self, other):
+        if isinstance(other, GlobalArray):
+            other = other.to_np() if other.total_rows == 1 else other.local
+        return GlobalArray(
+            self.total_rows, self.total_cols, local=self.local ** other)
+
+
     def __getitem__(self, key):
         if isinstance(key, slice):
             return self._slice_array(key)

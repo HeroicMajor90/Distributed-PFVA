@@ -83,6 +83,16 @@ def poly_fit(x, y, degree):
     return np.linalg.inv(X.transpose().dot(X)).dot(X.transpose()).dot(y)
 
 
+def predict(alfa, data):
+	predictions = np.empty(data.size)
+
+	for i in range(data.size):
+		powers = np.array([data[i] ** power for power in range(alpha.size)])
+		predictions[i] = np.sum(alpha*powers) >= 0.5
+
+	return predictions
+
+
 def main():
     X = np.loadtxt("dataM.txt")
     X = normalize(X)

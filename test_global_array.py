@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import global_array as ga
 import numpy as np
+import random
 from mpi4py import MPI
 
 TRIES_PER_TEST = 100
@@ -9,8 +10,18 @@ def im_root():
     return MPI.COMM_WORLD.Get_rank() == 0
 
 
-if im_root(): print("TEST: Greater than")
+if im_root(): print("TEST: One-to-One Functions")
+supported_operations = [
+    lambda x, y: x + y,
+    lambda x, y: x - y,
+    lambda x, y: x * y,
+    lambda x, y: x / y,
+    lambda x, y: x ** y,
+    lambda x, y: x > y,
+    lambda x, y: x < y,
+]
 shape = np.empty(3, dtype=np.int32)
+op_idx = np.empty(1, dtype=np.int32)
 for i in range(TRIES_PER_TEST):
     shape[:] = np.random.randint(1, 1000, 3, np.int32)
     MPI.COMM_WORLD.Bcast(shape)
@@ -18,37 +29,20 @@ for i in range(TRIES_PER_TEST):
     B = 1000 * np.random.rand(shape[0], shape[0])
     MPI.COMM_WORLD.Bcast(A)
     MPI.COMM_WORLD.Bcast(B)
+    op_idx[0] = random.randrange(len(supported_operations))
+    MPI.COMM_WORLD.Bcast(op_idx)
+    op = supported_operations[op_idx[0]]
     A_ga = ga.GlobalArray.array(A)
     B_ga = ga.GlobalArray.array(B)
-    C = A > B
+    C = op(A, B)
     C_ga = ga.GlobalArray.array(C)
-    A_ga = A_ga > B_ga
+    A_ga = op(A_ga, B_ga)
     if (C_ga != A_ga):
         (C_ga - A_ga.dot(B_ga)).disp()
         raise Exception("FAIL")
     elif im_root():
         print(i)   
 
-
-if im_root(): print("TEST: Lesser than")
-shape = np.empty(3, dtype=np.int32)
-for i in range(TRIES_PER_TEST):
-    shape[:] = np.random.randint(1, 1000, 3, np.int32)
-    MPI.COMM_WORLD.Bcast(shape)
-    A = 1000 * np.random.rand(shape[0], shape[0])
-    B = 1000 * np.random.rand(shape[0], shape[0])
-    MPI.COMM_WORLD.Bcast(A)
-    MPI.COMM_WORLD.Bcast(B)
-    A_ga = ga.GlobalArray.array(A)
-    B_ga = ga.GlobalArray.array(B)
-    C = A < B
-    C_ga = ga.GlobalArray.array(C)
-    A_ga = A_ga < B_ga
-    if (C_ga != A_ga):
-        (C_ga - A_ga.dot(B_ga)).disp()
-        raise Exception("FAIL")
-    elif im_root():
-        print(i)        
 
 
 if im_root(): print("TEST: QR Decomposition")

@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+# AUTHORS:
+# Ruben Aurelio Puebla Gutierrez
+# Jose Martin Urtiz Gutierrez
+# Michael Alexander Zenkl Galaz
 from mpi4py import MPI
 import numpy as np
 

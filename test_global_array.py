@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+# AUTHORS:
+# Ruben Aurelio Puebla Gutierrez
+# Jose Martin Urtiz Gutierrez
+# Michael Alexander Zenkl Galaz
 import global_array as ga
 import numpy as np
 import random

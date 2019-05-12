@@ -4,7 +4,8 @@ import sys
 import matplotlib.pyplot as plt
 
 PROBABILITY_WINDOW_SIZE = 21  # Must be odd
-F_INDEX = 0
+F_INDEX = 1
+FIT_DEGREE = 5
 
 CATEGORIES = [
     "Outdoors-n-Adventures",
@@ -58,17 +59,28 @@ def sort_by_eigen_value(e_val, e_vect):
 
 
 def sort_by_first_column(A):
-    ascending = np.argsort(A[:, 0])
-    return A[ascending, :]
+    asending = np.argsort(A[:, 0])
+    return A[asending, :]
 
 
 def get_probability_distribution(data, window_size):
     offset = int(window_size / 2)
     prob_dist = np.empty(np.size(data) - 2 * offset)
     for i in range(offset, np.size(data) - offset):
-        prob_dist[i - offset] = (
-            np.sum(data[i - offset:i - offset + window_size]) / window_size)
+        prob_dist[i - offset] = np.sum(data[i:i + window_size]) / window_size
     return prob_dist
+
+
+def linearize(x, degree):
+    X = np.empty((np.size(x), degree + 1))
+    for i in range(degree + 1):
+        X[:, i] = x ** i
+    return X
+
+
+def poly_fit(x, y, degree):
+    X = linearize(x, degree)
+    return np.linalg.inv(X.transpose().dot(X)).dot(X.transpose()).dot(y)
 
 
 def main():
@@ -85,11 +97,14 @@ def main():
     f_cat_data = np.stack([F[:, F_INDEX], cat_data], axis=-1)
     f_cat_data = sort_by_first_column(f_cat_data)
 
-    prob_dist = get_probability_distribution(f_cat_data[:, 1],
-                                             PROBABILITY_WINDOW_SIZE)
-
+    prob_dist = get_probability_distribution(f_cat_data[:, 1], PROBABILITY_WINDOW_SIZE)
     offset = int(PROBABILITY_WINDOW_SIZE / 2)
-    plt.plot(f_cat_data[offset:f_cat_data.shape[0] - offset, 0], prob_dist)
+    trunc_f = f_cat_data[offset:f_cat_data.shape[0] - offset, 0]
+    alfa = poly_fit(trunc_f, prob_dist, degree=FIT_DEGREE)
+    estimated_prob_dist = linearize(trunc_f, degree=FIT_DEGREE).dot(alfa)
+
+    plt.plot(trunc_f, prob_dist)
+    plt.plot(trunc_f, estimated_prob_dist)
     plt.title("Feature%i vs Likes(%s)" % (F_INDEX, cat_to_use))
     plt.xlabel("F%d" % F_INDEX)
     plt.ylabel("p(f)")

@@ -619,3 +619,9 @@ def hstack(arrays):
       last_col += array.total_cols
 
     return stacked
+
+
+def inv(A):
+    A_temp = ga.hstack([A, ga.GlobalArray.eye(A.total_rows)])
+    A_temp.rref()
+    return A_temp[:, A.total_cols:]

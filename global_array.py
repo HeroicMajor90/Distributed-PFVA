@@ -344,19 +344,34 @@ class GlobalArray(object):
                 res.local[row, col] = self.local[row].dot(current_col)
         return res
 
+
+    def sum(self, axis=None):
+        # axis =    None is average of flattened array
+        #      =    0 is column wise
+        #      =    1 is row wise
+        if axis == 0:
+            col_sum = GlobalArray(self.total_cols, 1)
+            local_sum = np.sum(self.local, axis=0)
+            global_sum = np.empty(self.total_cols, np.float64)
+            self.comm.Allreduce(local_sum, global_sum, op=MPI.SUM)
+            for col in range(col_sum.rows):
+                col_sum.local[col, 0] = global_sum[col + col_sum.offset]
+            return col_sum
+        else:
+            row_sum = GlobalArray(self.total_rows, 1)
+            row_sum.local[:, 0] = np.sum(self.local, axis=1)
+            if axis == 1:
+                return row_sum
+            else:
+                return row_sum.sum(axis=0)
+
+
     def mean(self, axis=None):
         # axis =    None is average of flattened array
         #      =    0 is column wise
         #      =    1 is row wise
         if axis == 0:
-            col_mean = GlobalArray(self.total_cols, 1)
-            local_sum = np.sum(self.local, axis=0)
-            global_sum = np.empty(self.total_cols, np.float64)
-            self.comm.Allreduce(local_sum, global_sum, op=MPI.SUM)
-            mean_vec = global_sum / self.total_rows
-            for col in range(col_mean.rows):
-                col_mean.local[col, 0] = mean_vec[col + col_mean.offset]
-            return col_mean
+            return self.sum(axis=0)/self.total_rows
         else:
             row_mean = GlobalArray(self.total_rows, 1)
             row_mean.local[:, 0] = np.mean(self.local, axis=1)

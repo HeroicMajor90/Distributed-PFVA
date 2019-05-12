@@ -18,10 +18,10 @@ for i in range(TRIES_PER_TEST):
     B = 1000 * np.random.rand(shape[0], shape[0])
     MPI.COMM_WORLD.Bcast(A)
     MPI.COMM_WORLD.Bcast(B)
-    A_ga = GlobalArray.array(A)
-    B_ga = GlobalArray.array(B)
+    A_ga = ga.GlobalArray.array(A)
+    B_ga = ga.GlobalArray.array(B)
     C = A > B
-    C_ga = GlobalArray.array(C)
+    C_ga = ga.GlobalArray.array(C)
     A_ga = A_ga > B_ga
     if (C_ga != A_ga):
         (C_ga - A_ga.dot(B_ga)).disp()
@@ -39,10 +39,10 @@ for i in range(TRIES_PER_TEST):
     B = 1000 * np.random.rand(shape[0], shape[0])
     MPI.COMM_WORLD.Bcast(A)
     MPI.COMM_WORLD.Bcast(B)
-    A_ga = GlobalArray.array(A)
-    B_ga = GlobalArray.array(B)
+    A_ga = ga.GlobalArray.array(A)
+    B_ga = ga.GlobalArray.array(B)
     C = A < B
-    C_ga = GlobalArray.array(C)
+    C_ga = ga.GlobalArray.array(C)
     A_ga = A_ga < B_ga
     if (C_ga != A_ga):
         (C_ga - A_ga.dot(B_ga)).disp()

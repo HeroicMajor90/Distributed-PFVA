@@ -591,3 +591,17 @@ def sort_by_first_column(A):
                     else np.empty((A.total_rows, A.total_cols), np.float64))
     A.comm.Bcast(sorted_array)
     return GlobalArray.array(sorted_array)
+
+
+def hstack(arrays):
+    rows = arrays[0].total_rows
+    cols = sum([array.total_cols for array in arrays])
+    stacked = GlobalArray(rows, cols)
+    
+    last_col = 0
+
+    for array in arrays:
+      stacked[:, last_col:last_col + array.total_cols] = array
+      last_col += array.total_cols
+
+    return stacked

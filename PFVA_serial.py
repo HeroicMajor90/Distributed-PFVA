@@ -89,7 +89,12 @@ def get_precision(f, cat_data, alpha):
 
 
 def get_r_squared(prob_dist, estimated_prob_dist):
-    pass
+    mean_prob = prob_dist.mean()
+    centered_prob_dist = prob_dist - mean_prob
+    ss_tot = centered_prob_dist.transpose().dot(centered_prob_dist)
+    error = prob_dist - estimated_prob_dist
+    ss_error = error.transpose().dot(error)
+    return 1 - ss_error / ss_tot
 
 
 def main():

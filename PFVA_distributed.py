@@ -7,37 +7,37 @@ from mpi4py import MPI
 
 PROBABILITY_WINDOW_SIZE = 21  # Must be odd
 F_INDEX = 0
-FIT_DEGREE = 5
+FIT_DEGREE = 3
 
 CATEGORIES = [
-	"Outdoors-n-Adventures",
-	"Tech",
-	"Family",
-	"Health-n-Wellness",
-	"Sports-n-Fitness",
-	"Learning",
-	"Photography",
-	"Food-n-Drink",
-	"Writing",
-	"Language-n-Culture",
-	"Music",
-	"Movements",
-	"LGBTQ",
-	"Film" ,
-	"Sci-Fi-n-Games",
-	"Beliefs",
-	"Arts",
-	"Book Clubs",
-	"Dance",
-	"Hobbies-n-Crafts",
-	"Fashion-n-Beauty",
-	"Social",
-	"Career-n-Business",
-	"Gardening-n-Outdoor housework",
-	"Cooking",
-	"Theatre, Show, Performance, Concerts",
-	"Drinking alcohol, Partying",
-	"Sex and Making Love"
+    "Outdoors-n-Adventures",
+    "Tech",
+    "Family",
+    "Health-n-Wellness",
+    "Sports-n-Fitness",
+    "Learning",
+    "Photography",
+    "Food-n-Drink",
+    "Writing",
+    "Language-n-Culture",
+    "Music",
+    "Movements",
+    "LGBTQ",
+    "Film" ,
+    "Sci-Fi-n-Games",
+    "Beliefs",
+    "Arts",
+    "Book Clubs",
+    "Dance",
+    "Hobbies-n-Crafts",
+    "Fashion-n-Beauty",
+    "Social",
+    "Career-n-Business",
+    "Gardening-n-Outdoor housework",
+    "Cooking",
+    "Theatre, Show, Performance, Concerts",
+    "Drinking alcohol, Partying",
+    "Sex and Making Love",
 ]
 
 
@@ -46,15 +46,14 @@ def im_root():
 
 
 def normalize(X):
-	return ((X - X.mean(axis=0).transpose()) / 
-          (np.sqrt(X.total_rows) * X.std(axis=0, zero_default=1).transpose()))
+    return ((X - X.mean(axis=0).transpose()) /
+            (np.sqrt(X.total_rows) * X.std(axis=0, zero_default=1).transpose()))
 
 
 def PCA(X):
     sigma = X.transpose().dot(X)
     S = ga.GlobalArray.eye(sigma.total_rows)
-
-    for _ in xrange(40):
+    for _ in range(40):
         Q, R = ga.qr(sigma)
         sigma = R.dot(Q)
         S = S.dot(Q)
@@ -66,7 +65,7 @@ def sort_by_eigen_value(e_val, e_vect):
     C[:, 0] = -1 * e_val
     C[:, 1:] = e_vect.transpose()
     descending = ga.sort_by_first_column(C)
-    return -1 * descending[:,0], descending[:, 1:].transpose()
+    return -1 * descending[:, 0], descending[:, 1:].transpose()
   
   
 def get_probability_distribution(data, window_size):
@@ -121,8 +120,8 @@ def main():
                                              PROBABILITY_WINDOW_SIZE)
     offset = int(PROBABILITY_WINDOW_SIZE / 2)
     trunc_f = f_cat_data[offset:f_cat_data.total_rows - offset, 0]
-    alpha = poly_fit(trunc_f, prob_dist, degree=FIT_DEGREE)
-    estimated_prob_dist = linearize(trunc_f, degree=FIT_DEGREE).dot(alpha)
+    alpha = poly_fit(trunc_f, prob_dist, FIT_DEGREE)
+    estimated_prob_dist = linearize(trunc_f, FIT_DEGREE).dot(alpha)
     model_precision = get_precision(F[:, F_INDEX], cat_data, alpha).to_np()
     r_squared = get_r_squared(prob_dist, estimated_prob_dist).to_np()
     

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 PROBABILITY_WINDOW_SIZE = 21  # Must be odd
 F_INDEX = 0
-FIT_DEGREE = 5
+FIT_DEGREE = 3
 
 CATEGORIES = [
     "Outdoors-n-Adventures",
@@ -115,8 +115,8 @@ def main():
                                              PROBABILITY_WINDOW_SIZE)
     offset = int(PROBABILITY_WINDOW_SIZE / 2)
     trunc_f = f_cat_data[offset:f_cat_data.shape[0] - offset, 0]
-    alpha = poly_fit(trunc_f, prob_dist, degree=FIT_DEGREE)
-    estimated_prob_dist = linearize(trunc_f, degree=FIT_DEGREE).dot(alpha)
+    alpha = poly_fit(trunc_f, prob_dist, FIT_DEGREE)
+    estimated_prob_dist = linearize(trunc_f, FIT_DEGREE).dot(alpha)
 
     print("Model Precision: %f" % get_precision(F[:, F_INDEX], cat_data, alpha))
     print("R^2: %f" % get_r_squared(prob_dist, estimated_prob_dist))

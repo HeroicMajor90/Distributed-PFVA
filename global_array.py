@@ -622,6 +622,6 @@ def hstack(arrays):
 
 
 def inv(A):
-    A_temp = ga.hstack([A, ga.GlobalArray.eye(A.total_rows)])
+    A_temp = hstack([A, GlobalArray.eye(A.total_rows)])
     A_temp.rref()
     return A_temp[:, A.total_cols:]

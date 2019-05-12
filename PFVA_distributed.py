@@ -134,7 +134,7 @@ def main():
         print("R^2: %f" % r_squared)
         plt.plot(trunc_f, prob_dist)
         plt.plot(trunc_f, estimated_prob_dist)
-        plt.title("Feature%i vs Likes(%s)" % (F_INDEX, cat_to_use))
+        plt.title("Feature(%d) vs Likes(%s)" % (F_INDEX, cat_to_use))
         plt.xlabel("F%d" % F_INDEX)
         plt.ylabel("p(f)")
         plt.show()

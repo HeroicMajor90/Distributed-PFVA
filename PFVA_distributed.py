@@ -2,6 +2,7 @@
 from global_array import GlobalArray, sort_by_first_column, qr
 import numpy as np
 import sys
+import matplotlib.pyplot as plt
 
 CATEGORIES = [
     "Outdoors-n-Adventures",

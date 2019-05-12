@@ -309,6 +309,20 @@ class GlobalArray(object):
         return not (self == other)
 
 
+    def __gt__(self, other): 
+        if isinstance(other, GlobalArray):
+            other = other.to_np() if other.total_rows == 1 else other.local
+        return GlobalArray(
+            self.total_rows, self.total_cols, local=self.local > other)
+
+
+    def __lt__(self, other): 
+        if isinstance(other, GlobalArray):
+            other = other.to_np() if other.total_rows == 1 else other.local
+        return GlobalArray(
+            self.total_rows, self.total_cols, local=self.local < other)
+
+
     def disp(self):
         for node_id in range(self.nodes):
             if node_id == self.node_id:

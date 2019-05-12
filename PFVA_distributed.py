@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from global_array import GlobalArray, sort_by_first_column, qr
 import numpy as np
+import sys
 
 CATEGORIES = [
     "Outdoors-n-Adventures",

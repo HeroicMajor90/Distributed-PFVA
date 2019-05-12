@@ -183,6 +183,14 @@ class GlobalArray(object):
         return cls.array(np.loadtxt(filename, **kwargs))
 
 
+    def diagonal(self):
+        assert self.total_rows == self.total_cols
+        ga = GlobalArray(self.total_rows, 1)
+        for row in range(self.rows):
+            ga.local[row, 0] = self.local[row, self.offset + row] 
+        return ga 
+
+
     def to_np(self):
         np_array = np.empty((self.total_rows, self.total_cols), np.float64)
         recv_elems = [self.total_cols * rows for rows in
@@ -336,7 +344,6 @@ class GlobalArray(object):
                 res.local[row, col] = self.local[row].dot(current_col)
         return res
 
-
     def mean(self, axis=None):
         # axis =    None is average of flattened array
         #      =    0 is column wise
@@ -409,7 +416,8 @@ class GlobalArray(object):
                     # Set Max Pivot
                     if self.node_id < current_pivot_node or self.rows < 1:
                         # Node is irrelevant if above pivot
-                        senddata = np.array([0, self.node_id], dtype=np.float64)
+                        senddata = np.array([0, self.node_id], 
+                                            dtype=np.float64)
                     elif self.node_id == current_pivot_node:  
                         # If node is pivot_node
                         a = np.abs(self.local[pivot_coords[0]:self.rows,

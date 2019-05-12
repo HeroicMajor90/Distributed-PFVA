@@ -1,0 +1,6 @@
+Install Dependencies:
+* Numpy
+* Mpi4py
+
+Download source code and run PFVA_distributed.py using:
+"mpiexec -n 4 python PFVA_distributed.py"

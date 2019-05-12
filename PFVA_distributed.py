@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from global_array import GlobalArray, sort_by_first_column, qr
 import numpy as np
 import sys
 import matplotlib.pyplot as plt
@@ -35,32 +36,28 @@ CATEGORIES = [
     "Cooking",
     "Theatre, Show, Performance, Concerts",
     "Drinking alcohol, Partying",
-    "Sex and Making Love",
+    "Sex and Making Love"
 ]
 
 
 def normalize(X):
-    return (X - np.mean(X, axis=0)) / (np.sqrt(X.shape[0]) * np.std(X, axis=0))
+    return (X - X.mean(axis=0).transpose()) / (np.sqrt(X.total_rows) *
+                                               X.std(axis=0, zero_default=1).transpose())
 
 
 def PCA(X):
-    sigma = X.T.dot(X)
-    S = np.identity(sigma.shape[0])
+    sigma = X.transpose().dot(X)
+    S = GlobalArray.eye(sigma.total_rows)
     for _ in range(40):
-        Q, R = np.linalg.qr(sigma, mode="complete")
+        Q, R = qr(sigma)
         sigma = R.dot(Q)
         S = S.dot(Q)
-    return np.diagonal(sigma), S
+    return sigma.diagonal(), S
 
 
 def sort_by_eigen_value(e_val, e_vect):
     descending = np.argsort(-e_val)
     return e_val[descending], e_vect[:, descending]
-
-
-def sort_by_first_column(A):
-    asending = np.argsort(A[:, 0])
-    return A[asending, :]
 
 
 def get_probability_distribution(data, window_size):
@@ -72,7 +69,7 @@ def get_probability_distribution(data, window_size):
 
 
 def linearize(x, degree):
-    X = np.empty((np.size(x), degree + 1))
+    X = GlobalArray(x.total_rows, degree + 1)
     for i in range(degree + 1):
         X[:, i] = x ** i
     return X
@@ -80,24 +77,30 @@ def linearize(x, degree):
 
 def poly_fit(x, y, degree):
     X = linearize(x, degree)
-    return np.linalg.inv(X.transpose().dot(X)).dot(X.transpose()).dot(y)
-
-
-def get_precision(f, cat_data, alpha):
-    return float(np.mean(
-        (linearize(f, degree=FIT_DEGREE).dot(alpha) > 0.5) == cat_data))
+    I = GlobalArray.eye(np.size(x))
+    C = GlobalArray(X.total_rows, X.total_cols + I.total_cols)
+    C[:, :X.total_cols] = X
+    C[:, C.total_cols - I.total_cols:] = I
+    C.rref()
+    C = C[:, X.total_cols - I.total_cols:]
+    return C
 
 
 def main():
-    X = np.loadtxt("dataM.txt")
+    X = GlobalArray.from_file("dataM.txt")
     X = normalize(X)
+
     e_val, e_vect = PCA(X)
+    e_val.disp()
+    e_vect.disp()
+    exit()
+
     e_val, e_vect = sort_by_eigen_value(e_val, e_vect)
-    F = X.dot(e_vect)
+    F = X.dot(GlobalArray.array(e_vect))
 
     cat_to_use = sys.argv[1] if len(sys.argv) > 1 else "Tech"
     cat_index = CATEGORIES.index(cat_to_use) if cat_to_use in CATEGORIES else 0
-    cat_data = np.loadtxt("likesM.txt")[:, cat_index]
+    cat_data = GlobalArray.from_file("likesM.txt")[:, cat_index]
 
     f_cat_data = np.stack([F[:, F_INDEX], cat_data], axis=-1)
     f_cat_data = sort_by_first_column(f_cat_data)
@@ -108,7 +111,8 @@ def main():
     trunc_f = f_cat_data[offset:f_cat_data.shape[0] - offset, 0]
     alpha = poly_fit(trunc_f, prob_dist, degree=FIT_DEGREE)
     estimated_prob_dist = linearize(trunc_f, degree=FIT_DEGREE).dot(alpha)
-    print("Model Precision: %f" % get_precision(F[:, F_INDEX], cat_data, alpha))
+    model_precision = np.mean(
+        (linearize(f_cat_data[:, 0], degree=FIT_DEGREE).dot(alpha) > 0.5) == f_cat_data[:, 1])
 
     plt.plot(trunc_f, prob_dist)
     plt.plot(trunc_f, estimated_prob_dist)
@@ -120,3 +124,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+

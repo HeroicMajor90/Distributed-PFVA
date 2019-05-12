@@ -7,7 +7,7 @@ TRIES_PER_TEST = 100
 
 def im_root():
     return MPI.COMM_WORLD.Get_rank() == 0
-
+    
 
 if im_root(): print("TEST: QR Decomposition")
 shape = np.empty(2, dtype=np.int32)
@@ -155,6 +155,59 @@ for i in range(TRIES_PER_TEST):
     elif im_root():
         print(i)
 
+if im_root(): print("TEST: Matrix Sum: Column Wise")
+shape = np.empty(2, dtype=np.int32)
+for i in range(TRIES_PER_TEST):
+    shape[:] = np.random.randint(1, 1000, 2, np.int32)
+    MPI.COMM_WORLD.Bcast(shape)
+    A = 1000 * np.random.rand(shape[0], shape[1])
+    MPI.COMM_WORLD.Bcast(A)
+    A_ga = GlobalArray.array(A)
+    C = np.sum(A,axis=0)
+    C = np.reshape(C,(-1,1))
+    C_ga = GlobalArray.array(C)
+    AS_ga = A_ga.sum(axis=0)
+    if C_ga != AS_ga:
+        (C_ga - AS_ga).disp()
+        raise Exception("FAIL")
+    elif im_root():
+        print(i)
+
+
+if im_root(): print("TEST: Matrix Sum: Row Wise")
+for i in range(TRIES_PER_TEST):
+    shape[:] = np.random.randint(1, 1000, 2, np.int32)
+    MPI.COMM_WORLD.Bcast(shape)
+    A = 1000 * np.random.rand(shape[0], shape[1])
+    MPI.COMM_WORLD.Bcast(A)
+    A_ga = GlobalArray.array(A)
+    C = np.sum(A,axis=1)
+    C = np.reshape(C,(-1,1))
+    C_ga = GlobalArray.array(C)
+    AS_ga = A_ga.sum(axis=1)
+    if C_ga != AS_ga:
+        (C_ga - AS_ga).disp()
+        raise Exception("FAIL")
+    elif im_root():
+        print(i)
+
+
+if im_root(): print("TEST: Matrix Sum: Flat")
+for i in range(TRIES_PER_TEST):
+    shape[:] = np.random.randint(1, 1000, 2, np.int32)
+    MPI.COMM_WORLD.Bcast(shape)
+    A = 1000 * np.random.rand(shape[0], shape[1])
+    MPI.COMM_WORLD.Bcast(A)
+    A_ga = GlobalArray.array(A)
+    C = np.sum(A,axis=None)
+    C = np.reshape(C,(-1,1))
+    C_ga = GlobalArray.array(C)
+    AS_ga = A_ga.sum(axis=None)
+    if C_ga != AS_ga:
+        (C_ga - AS_ga).disp()
+        raise Exception("FAIL")
+    elif im_root():
+        print(i)
 
 if im_root(): print("TEST: Matrix Average: Column Wise")
 shape = np.empty(2, dtype=np.int32)

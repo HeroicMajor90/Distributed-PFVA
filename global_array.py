@@ -183,6 +183,14 @@ class GlobalArray(object):
         return cls.array(np.loadtxt(filename, **kwargs))
 
 
+    def diagonal(self):
+        assert self.total_rows == self.total_cols
+        ga = GlobalArray(self.total_rows, 1)
+        for row in range(self.rows):
+            ga.local[row, 0] = self.local[row, self.offset + row] 
+        return ga 
+
+
     def to_np(self):
         np_array = np.empty((self.total_rows, self.total_cols), np.float64)
         recv_elems = [self.total_cols * rows for rows in
@@ -344,19 +352,33 @@ class GlobalArray(object):
         return res
 
 
+    def sum(self, axis=None):
+        # axis =    None is average of flattened array
+        #      =    0 is column wise
+        #      =    1 is row wise
+        if axis == 0:
+            col_sum = GlobalArray(self.total_cols, 1)
+            local_sum = np.sum(self.local, axis=0)
+            global_sum = np.empty(self.total_cols, np.float64)
+            self.comm.Allreduce(local_sum, global_sum, op=MPI.SUM)
+            for col in range(col_sum.rows):
+                col_sum.local[col, 0] = global_sum[col + col_sum.offset]
+            return col_sum
+        else:
+            row_sum = GlobalArray(self.total_rows, 1)
+            row_sum.local[:, 0] = np.sum(self.local, axis=1)
+            if axis == 1:
+                return row_sum
+            else:
+                return row_sum.sum(axis=0)
+
+
     def mean(self, axis=None):
         # axis =    None is average of flattened array
         #      =    0 is column wise
         #      =    1 is row wise
         if axis == 0:
-            col_mean = GlobalArray(self.total_cols, 1)
-            local_sum = np.sum(self.local, axis=0)
-            global_sum = np.empty(self.total_cols, np.float64)
-            self.comm.Allreduce(local_sum, global_sum, op=MPI.SUM)
-            mean_vec = global_sum / self.total_rows
-            for col in range(col_mean.rows):
-                col_mean.local[col, 0] = mean_vec[col + col_mean.offset]
-            return col_mean
+            return self.sum(axis=0)/self.total_rows
         else:
             row_mean = GlobalArray(self.total_rows, 1)
             row_mean.local[:, 0] = np.mean(self.local, axis=1)
@@ -416,7 +438,8 @@ class GlobalArray(object):
                     # Set Max Pivot
                     if self.node_id < current_pivot_node or self.rows < 1:
                         # Node is irrelevant if above pivot
-                        senddata = np.array([0, self.node_id], dtype=np.float64)
+                        senddata = np.array([0, self.node_id], 
+                                            dtype=np.float64)
                     elif self.node_id == current_pivot_node:  
                         # If node is pivot_node
                         a = np.abs(self.local[pivot_coords[0]:self.rows,

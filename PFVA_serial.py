@@ -97,7 +97,8 @@ def main():
     f_cat_data = np.stack([F[:, F_INDEX], cat_data], axis=-1)
     f_cat_data = sort_by_first_column(f_cat_data)
 
-    prob_dist = get_probability_distribution(f_cat_data[:, 1], PROBABILITY_WINDOW_SIZE)
+    prob_dist = get_probability_distribution(f_cat_data[:, 1],
+                                             PROBABILITY_WINDOW_SIZE)
     offset = int(PROBABILITY_WINDOW_SIZE / 2)
     trunc_f = f_cat_data[offset:f_cat_data.shape[0] - offset, 0]
     alfa = poly_fit(trunc_f, prob_dist, degree=FIT_DEGREE)

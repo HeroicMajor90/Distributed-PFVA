@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 PROBABILITY_WINDOW_SIZE = 21  # Must be odd
 F_INDEX = 0
-FIT_DEGREE = 5
+FIT_DEGREE = 3
 
 CATEGORIES = [
     "Outdoors-n-Adventures",
@@ -84,8 +84,12 @@ def poly_fit(x, y, degree):
 
 
 def get_precision(f, cat_data, alpha):
-    return float(np.mean(
-        (linearize(f, degree=FIT_DEGREE).dot(alpha) > 0.5) == cat_data))
+    return np.mean(
+        (linearize(f, degree=FIT_DEGREE).dot(alpha) > 0.5) == cat_data)
+
+
+def get_r_squared(prob_dist, estimated_prob_dist):
+    pass
 
 
 def main():
@@ -108,11 +112,13 @@ def main():
     trunc_f = f_cat_data[offset:f_cat_data.shape[0] - offset, 0]
     alpha = poly_fit(trunc_f, prob_dist, degree=FIT_DEGREE)
     estimated_prob_dist = linearize(trunc_f, degree=FIT_DEGREE).dot(alpha)
+
     print("Model Precision: %f" % get_precision(F[:, F_INDEX], cat_data, alpha))
+    print("R^2: %f" % get_r_squared(prob_dist, estimated_prob_dist))
 
     plt.plot(trunc_f, prob_dist)
     plt.plot(trunc_f, estimated_prob_dist)
-    plt.title("Feature%i vs Likes(%s)" % (F_INDEX, cat_to_use))
+    plt.title("Feature(%d) vs Likes(%s)" % (F_INDEX, cat_to_use))
     plt.xlabel("F%d" % F_INDEX)
     plt.ylabel("p(f)")
     plt.show()

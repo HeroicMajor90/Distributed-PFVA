@@ -7,7 +7,49 @@ TRIES_PER_TEST = 100
 
 def im_root():
     return MPI.COMM_WORLD.Get_rank() == 0
-    
+
+
+if im_root(): print("TEST: Greater than")
+shape = np.empty(3, dtype=np.int32)
+for i in range(TRIES_PER_TEST):
+    shape[:] = np.random.randint(1, 1000, 3, np.int32)
+    MPI.COMM_WORLD.Bcast(shape)
+    A = 1000 * np.random.rand(shape[0], shape[0])
+    B = 1000 * np.random.rand(shape[0], shape[0])
+    MPI.COMM_WORLD.Bcast(A)
+    MPI.COMM_WORLD.Bcast(B)
+    A_ga = GlobalArray.array(A)
+    B_ga = GlobalArray.array(B)
+    C = A > B
+    C_ga = GlobalArray.array(C)
+    A_ga = A_ga > B_ga
+    if (C_ga != A_ga):
+        (C_ga - A_ga.dot(B_ga)).disp()
+        raise Exception("FAIL")
+    elif im_root():
+        print(i)   
+
+
+if im_root(): print("TEST: Lesser than")
+shape = np.empty(3, dtype=np.int32)
+for i in range(TRIES_PER_TEST):
+    shape[:] = np.random.randint(1, 1000, 3, np.int32)
+    MPI.COMM_WORLD.Bcast(shape)
+    A = 1000 * np.random.rand(shape[0], shape[0])
+    B = 1000 * np.random.rand(shape[0], shape[0])
+    MPI.COMM_WORLD.Bcast(A)
+    MPI.COMM_WORLD.Bcast(B)
+    A_ga = GlobalArray.array(A)
+    B_ga = GlobalArray.array(B)
+    C = A < B
+    C_ga = GlobalArray.array(C)
+    A_ga = A_ga < B_ga
+    if (C_ga != A_ga):
+        (C_ga - A_ga.dot(B_ga)).disp()
+        raise Exception("FAIL")
+    elif im_root():
+        print(i)        
+
 
 if im_root(): print("TEST: QR Decomposition")
 shape = np.empty(2, dtype=np.int32)

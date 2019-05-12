@@ -251,6 +251,13 @@ class GlobalArray(object):
             self.total_rows, self.total_cols, local=other / self.local)
 
 
+    def __pow__(self, other):
+        if isinstance(other, GlobalArray):
+            other = other.to_np() if other.total_rows == 1 else other.local
+        return GlobalArray(
+            self.total_rows, self.total_cols, local=self.local ** other)
+
+
     def __getitem__(self, key):
         if isinstance(key, slice):
             return self._slice_array(key)
@@ -300,6 +307,20 @@ class GlobalArray(object):
 
     def __ne__(self, other):  # Total-wise
         return not (self == other)
+
+
+    def __gt__(self, other): 
+        if isinstance(other, GlobalArray):
+            other = other.to_np() if other.total_rows == 1 else other.local
+        return GlobalArray(
+            self.total_rows, self.total_cols, local=self.local > other)
+
+
+    def __lt__(self, other): 
+        if isinstance(other, GlobalArray):
+            other = other.to_np() if other.total_rows == 1 else other.local
+        return GlobalArray(
+            self.total_rows, self.total_cols, local=self.local < other)
 
 
     def disp(self):
@@ -584,3 +605,17 @@ def sort_by_first_column(A):
                     else np.empty((A.total_rows, A.total_cols), np.float64))
     A.comm.Bcast(sorted_array)
     return GlobalArray.array(sorted_array)
+
+
+def hstack(arrays):
+    rows = arrays[0].total_rows
+    cols = sum([array.total_cols for array in arrays])
+    stacked = GlobalArray(rows, cols)
+    
+    last_col = 0
+
+    for array in arrays:
+      stacked[:, last_col:last_col + array.total_cols] = array
+      last_col += array.total_cols
+
+    return stacked

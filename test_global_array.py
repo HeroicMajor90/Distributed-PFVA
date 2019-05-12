@@ -38,7 +38,7 @@ for i in range(TRIES_PER_TEST):
     C = op(A, B)
     C_ga = ga.GlobalArray.array(C)
     A_ga = op(A_ga, B_ga)
-    if (C_ga != A_ga):
+    if not C_ga.allclose(A_ga):
         (C_ga - A_ga.dot(B_ga)).disp()
         raise Exception("FAIL")
     elif im_root():
@@ -59,9 +59,9 @@ for i in range(TRIES_PER_TEST):
     Q_ga, R_ga = ga.qr(A_ga)
     Q_trans_ga = Q_ga.transpose()
     Eye_ga = ga.GlobalArray.eye(shape[0])
-    if (Q_ga.dot(R_ga) != A_ga or
-            Q_ga.dot(Q_trans_ga) != Eye_ga or
-            Q_trans_ga.dot(Q_ga) != Eye_ga):
+    if not (Q_ga.dot(R_ga).allclose(A_ga)
+            or Q_ga.dot(Q_trans_ga).allclose(Eye_ga)
+            or Q_trans_ga.dot(Q_ga).allclose(Eye_ga)):
         Q_ga.disp()
         R_ga.disp()
         Q_ga.dot(R_ga).disp()
@@ -80,7 +80,7 @@ for i in range(TRIES_PER_TEST):
     MPI.COMM_WORLD.Bcast(A)
     A_ga = ga.GlobalArray.array(A)
     SA_ga = ga.GlobalArray.array(A[A[:, 0].argsort()])
-    if ga.sort_by_first_column(A_ga) != SA_ga:
+    if not ga.sort_by_first_column(A_ga).allclose(SA_ga):
         SA_ga.disp()
         ga.sort_by_first_column(A_ga).disp()
         raise Exception("FAIL")
@@ -127,7 +127,7 @@ for i in range(TRIES_PER_TEST):
 
     AS_ga = ga.GlobalArray.array(A)
 
-    if A_ga != AS_ga:
+    if not A_ga.allclose(AS_ga):
         AS_ga.disp()
         A_ga.disp()
         raise Exception("FAIL")
@@ -147,7 +147,7 @@ for i in range(TRIES_PER_TEST):
     C = np.reshape(C,(-1,1))
     C_ga = ga.GlobalArray.array(C)
     AS_ga = A_ga.std(axis=0)
-    if C_ga != AS_ga:
+    if not C_ga.allclose(AS_ga):
         (C_ga - AS_ga).disp()
         raise Exception("FAIL")
     elif im_root():
@@ -166,7 +166,7 @@ for i in range(TRIES_PER_TEST):
     C = np.reshape(C,(-1,1))
     C_ga = ga.GlobalArray.array(C)
     AS_ga = A_ga.std(axis=1)
-    if C_ga != AS_ga:
+    if not C_ga.allclose(AS_ga):
         (C_ga - AS_ga).disp()
         raise Exception("FAIL")
     elif im_root():
@@ -185,7 +185,7 @@ for i in range(TRIES_PER_TEST):
     C = np.reshape(C,(-1,1))
     C_ga = ga.GlobalArray.array(C)
     AS_ga = A_ga.std()
-    if C_ga != AS_ga:
+    if not C_ga.allclose(AS_ga):
         C_ga.disp()
         (C_ga - AS_ga).disp()
         raise Exception("FAIL")
@@ -204,7 +204,7 @@ for i in range(TRIES_PER_TEST):
     C = np.reshape(C,(-1,1))
     C_ga = ga.GlobalArray.array(C)
     AS_ga = A_ga.sum(axis=0)
-    if C_ga != AS_ga:
+    if not C_ga.allclose(AS_ga):
         (C_ga - AS_ga).disp()
         raise Exception("FAIL")
     elif im_root():
@@ -222,7 +222,7 @@ for i in range(TRIES_PER_TEST):
     C = np.reshape(C,(-1,1))
     C_ga = ga.GlobalArray.array(C)
     AS_ga = A_ga.sum(axis=1)
-    if C_ga != AS_ga:
+    if not C_ga.allclose(AS_ga):
         (C_ga - AS_ga).disp()
         raise Exception("FAIL")
     elif im_root():
@@ -240,7 +240,7 @@ for i in range(TRIES_PER_TEST):
     C = np.reshape(C,(-1,1))
     C_ga = ga.GlobalArray.array(C)
     AS_ga = A_ga.sum(axis=None)
-    if C_ga != AS_ga:
+    if not C_ga.allclose(AS_ga):
         (C_ga - AS_ga).disp()
         raise Exception("FAIL")
     elif im_root():
@@ -258,7 +258,7 @@ for i in range(TRIES_PER_TEST):
     C = np.reshape(C,(-1,1))
     C_ga = ga.GlobalArray.array(C)
     AM_ga = A_ga.mean(axis=0)
-    if C_ga != AM_ga:
+    if not C_ga.allclose(AM_ga):
         (C_ga - AM_ga).disp()
         raise Exception("FAIL")
     elif im_root():
@@ -276,7 +276,7 @@ for i in range(TRIES_PER_TEST):
     C = np.reshape(C,(-1,1))
     C_ga = ga.GlobalArray.array(C)
     AM_ga = A_ga.mean(axis=1)
-    if C_ga != AM_ga:
+    if not C_ga.allclose(AM_ga):
         (C_ga - AM_ga).disp()
         raise Exception("FAIL")
     elif im_root():
@@ -294,7 +294,7 @@ for i in range(TRIES_PER_TEST):
     C = np.reshape(C,(-1,1))
     C_ga = ga.GlobalArray.array(C)
     AM_ga = A_ga.mean(axis=None)
-    if C_ga != AM_ga:
+    if not C_ga.allclose(AM_ga):
         (C_ga - AM_ga).disp()
         raise Exception("FAIL")
     elif im_root():
@@ -348,7 +348,7 @@ for i in range(TRIES_PER_TEST):
 
     Sliced_Array = A_ga[start:stop:step, start1:stop1:step1]
 
-    if Sliced_Array != AS_ga:
+    if not Sliced_Array.allclose(AS_ga):
         AS_ga.disp()
         Sliced_Array.disp()
         raise Exception("FAIL")
@@ -373,7 +373,7 @@ for i in range(TRIES_PER_TEST):
 
     Indexed_Array = A_ga[index]
 
-    if Indexed_Array != AS_ga:
+    if not Indexed_Array.allclose(AS_ga):
         AS_ga.disp()
         Indexed_Array.disp()
         raise Exception("FAIL")
@@ -401,7 +401,7 @@ for i in range(TRIES_PER_TEST):
     AS_ga = ga.GlobalArray.array(A[start:stop:step])
     Sliced_Array = A_ga[start:stop:step]
 
-    if Sliced_Array != AS_ga:
+    if not Sliced_Array.allclose(AS_ga):
         AS_ga.disp()
         Sliced_Array.disp()
         raise Exception("FAIL")
@@ -419,7 +419,7 @@ for i in range(TRIES_PER_TEST):
     A_ga = ga.GlobalArray.array(A)
     AT_ga = ga.GlobalArray.array(A.transpose())
 
-    if A_ga.transpose() != AT_ga:
+    if not A_ga.transpose().allclose(AT_ga):
         A_ga.disp()
         AT_ga.disp()
         A_ga.transpose().disp()
@@ -440,7 +440,7 @@ for i in range(TRIES_PER_TEST):
     Ainv_ga = ga.inv(ga.GlobalArray.array(A))
 
     Ainv = ga.GlobalArray.array(np.linalg.inv(A))
-    if Ainv_ga != Ainv:
+    if not Ainv_ga.allclose(Ainv):
         Ainv_ga.disp()
         raise Exception("FAIL")
     elif im_root():
@@ -460,7 +460,7 @@ for i in range(TRIES_PER_TEST):
     B_ga = ga.GlobalArray.array(B)
     C = A.dot(B)
     C_ga = ga.GlobalArray.array(C)
-    if C_ga != A_ga.dot(B_ga):
+    if not C_ga.allclose(A_ga.dot(B_ga)):
         (C_ga - A_ga.dot(B_ga)).disp()
         raise Exception("FAIL")
     elif im_root():

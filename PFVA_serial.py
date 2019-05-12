@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 PROBABILITY_WINDOW_SIZE = 21  # Must be odd
 F_INDEX = 0
-FIT_DEGREE = 3
+FIT_DEGREE = 5
 
 CATEGORIES = [
     "Outdoors-n-Adventures",

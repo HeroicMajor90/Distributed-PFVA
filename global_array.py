@@ -298,29 +298,36 @@ class GlobalArray(object):
             raise TypeError("Global Arrays indices must be integers or slice")
 
 
-    def __eq__(self, other):  # Total-wise
-        local_eq = np.array([np.allclose(self.local, other.local)])
-        global_eq = np.empty(1, dtype=bool)
-        self.comm.Allreduce(local_eq, global_eq, op=MPI.LAND)
-        return global_eq[0]
+    def __eq__(self, other):
+        if isinstance(other, GlobalArray):
+            other = other.local
+        return GlobalArray(
+            self.total_rows, self.total_cols, local=self.local == other)
 
 
-    def __ne__(self, other):  # Total-wise
+    def __ne__(self, other):
         return not (self == other)
 
 
     def __gt__(self, other): 
         if isinstance(other, GlobalArray):
-            other = other.to_np() if other.total_rows == 1 else other.local
+            other = other.local
         return GlobalArray(
             self.total_rows, self.total_cols, local=self.local > other)
 
 
     def __lt__(self, other): 
         if isinstance(other, GlobalArray):
-            other = other.to_np() if other.total_rows == 1 else other.local
+            other = other.local
         return GlobalArray(
             self.total_rows, self.total_cols, local=self.local < other)
+
+
+    def allclose(self, other):
+        local_eq = np.array([np.allclose(self.local, other.local)])
+        global_eq = np.empty(1, dtype=bool)
+        self.comm.Allreduce(local_eq, global_eq, op=MPI.LAND)
+        return global_eq[0]
 
 
     def disp(self):
